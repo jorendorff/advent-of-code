@@ -1,0 +1,6 @@
+# My input.txt is no use to anyone else.
+input.txt
+
+# compiled Dafny files
+*.dll
+*.dll.mdb
