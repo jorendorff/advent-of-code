@@ -61,7 +61,7 @@ assert contested_area(parse(testcase1)) == 4  # part 1
 assert uncontested_claim(parse(testcase1)) == 3  # part 2
 
 if __name__ == '__main__':
-    with open("input.txt") as f:
+    with open("puzzle-input.txt") as f:
         claims = list(parse(f))
     print(contested_area(claims))  # part 1
     print(uncontested_claim(claims))  # part 2

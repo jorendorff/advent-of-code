@@ -10,7 +10,7 @@ def find_neighbors(box_ids):
 assert list(find_neighbors('abcde fghij klmno pqrst fguij axcye wvxyz'.split())) == ['fgij']
 
 if __name__ == '__main__':
-    with open("input.txt") as f:
+    with open("puzzle-input.txt") as f:
         puzzle_input = f.read().splitlines()
     for solution in find_neighbors(puzzle_input):
         print(solution)

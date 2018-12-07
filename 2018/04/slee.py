@@ -91,7 +91,7 @@ assert part1(test_input.splitlines()) == 240
 assert part2(test_input.splitlines()) == 4455
 
 if __name__ == '__main__':
-    with open('input.txt') as f:
+    with open('puzzle-input.txt') as f:
         lines = f.readlines()
     print(part1(lines))
     print(part2(lines))

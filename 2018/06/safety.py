@@ -41,6 +41,6 @@ sample_points = parse_input(sample_input)
 assert safe_region(sample_points, 32) == 16
 
 if __name__ == '__main__':
-    with open('input.txt') as f:
+    with open('puzzle-input.txt') as f:
         points = parse_input(f)
     print(safe_region(points, 10000))

@@ -73,6 +73,6 @@ for n in [1, 2, 3, 50]:
 
 
 if __name__ == '__main__':
-    with open('input.txt') as f:
+    with open('puzzle-input.txt') as f:
         points = parse_input(f)
     print(area_around_least_dangerous_point(points))

@@ -29,7 +29,7 @@ assert shortest('dabAcCaCBAcCcaDA') == 4
 assert shortest('baddacabbaUABBACADDAB') == 0
 
 if __name__ == '__main__':
-    with open('input.txt') as f:
+    with open('puzzle-input.txt') as f:
         polymer = f.read().strip()
     if re.match(r'^[a-zA-Z]*$', polymer) is None:
         print("bad input")

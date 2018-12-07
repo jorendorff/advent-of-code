@@ -15,7 +15,7 @@ assert checksum(['abcdef', 'bababc', 'abbcde', 'abcccd', 'aabcdd', 'abcdee', 'ab
 
 
 if __name__ == '__main__':
-    with open("input.txt") as f:
+    with open("puzzle-input.txt") as f:
         puzzle_input = f.read().splitlines()
     print(checksum(puzzle_input))
 
