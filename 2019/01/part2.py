@@ -44,7 +44,7 @@ def total_fuel_required(m):
     if f == 0:
         return 0
     else:
-        return f + fuel_required_for_fuel(f)
+        return f + total_fuel_required(f)
 
 assert fuel_required(14) == 2
 assert fuel_required(2) == 0
