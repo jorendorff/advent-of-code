@@ -36,8 +36,8 @@ def valid(password):
 
 
 assert valid(111111)
-assert valid(223450)
-assert valid(123789)
+assert not valid(223450)
+assert not valid(123789)
 
 
 def how_many_in_range(first, last):
@@ -46,4 +46,4 @@ def how_many_in_range(first, last):
 
 with open("puzzle-input.txt") as f:
     first, last = f.read().strip().split('-')
-    print(how_many_in_range(int(first), int(last))
+    print(how_many_in_range(int(first), int(last)))
