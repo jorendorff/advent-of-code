@@ -106,7 +106,7 @@ def vm(memory, inputs):
 
     def get(operand_index):
         operand = memory[ip + operand_index]
-        mode = modes / (10 ** (operand_index - 1)) % 10
+        mode = modes // (10 ** (operand_index - 1)) % 10
         if mode == 0:
             # position mode
             return memory[operand]
@@ -130,7 +130,7 @@ def vm(memory, inputs):
             a = get(1)
             b = get(2)
             out_addr = memory[ip + 3]
-            if insn == 1:
+            if opcode == 1:
                 c = a + b
             else:
                 c = a * b
@@ -175,6 +175,7 @@ assert compute([2,4,4,5,99,0]) == [2,4,4,5,99,9801]
 assert compute([1,1,1,4,99,5,6,0,99]) == [30,1,1,4,2,5,6,0,99]
 
 assert compute([1002,4,3,4,33]) == [1002,4,3,4,99]
+assert compute([1101,100,-1,4,0]) == [1101,100,-1,4,99]
 
 
 def run_diagnostic_program(memory, input_values):
@@ -185,4 +186,4 @@ def run_diagnostic_program(memory, input_values):
 
 with open("puzzle-input.txt") as f:
     memory = [int(word) for word in f.read().strip().split(',')]
-    print(run_diagnostic_program(memory, [1])
+    print(run_diagnostic_program(memory, [1]))
