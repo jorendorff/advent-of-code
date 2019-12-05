@@ -81,12 +81,18 @@ def wire_points(s):
 
 test_wire_1 = wire_points('R8,U5,L5,D3')
 assert len(test_wire_1) == 22
+assert test_wire_1[0] == 0
+assert test_wire_1[1] == 1
+assert test_wire_1[8] == 8
+assert test_wire_1[8+4j] == 12
+assert test_wire_1[3+3j] == 20
+assert sorted(test_wire_1.values()) == list(range(22))
 test_wire_2 = wire_points('U7,R6,D4,L4')
 assert len(test_wire_2) == 22
 
 
 def intersections(wire1, wire2):
-    return {wire1[p] + wire2[p] for p in wire1 if p in wire2}
+    return {p: wire1[p] + wire2[p] for p in wire1 if p in wire2}
 
 
 assert intersections(test_wire_1, test_wire_2) == {0: 0, 3 + 3j: 40, 6 + 5j: 30}
@@ -101,8 +107,8 @@ assert distance(3 - 4j) == 7
 
 
 def solve(first, second):
-    intersections = wire_points(first) & wire_points(second)
-    return min(steps for p, steps in intersections.items() if p != 0)
+    step_mapping = intersections(wire_points(first), wire_points(second))
+    return min(t for t in step_mapping.values() if t != 0)
 
 
 assert solve('R8,U5,L5,D3', 'U7,R6,D4,L4') == 30
