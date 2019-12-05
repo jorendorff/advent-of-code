@@ -61,8 +61,8 @@ intersection?
 STEPS = {
     'R': 1 + 0j,
     'U': 1j,
-    'D': -1 + 0j,
-    'L': -1j,
+    'L': -1 + 0j,
+    'D': -1j,
 }
 
 
@@ -73,12 +73,17 @@ def displacements(s):
         yield from [step] * length
 
 
+assert list(displacements('U2,R1')) == [1j, 1j, 1]
+
 def partial_sums(it, start=0):
     point = start
     yield point
     for step in it:
         point += step
         yield point
+
+
+assert set(partial_sums(displacements('R5'))) == {0, 1, 2, 3, 4, 5}
 
 
 def wire_points(s):
@@ -89,8 +94,8 @@ def wire_points(s):
 test_wire_1 = wire_points('R8,U5,L5,D3')
 assert len(test_wire_1) == 22
 test_wire_2 = wire_points('U7,R6,D4,L4')
-assert len(test_wire_2) == 41
-assert test_wire_1 & test_wire_2 == {3 + 3j, 6 + 5j}
+assert len(test_wire_2) == 22
+assert test_wire_1 & test_wire_2 == {0, 3 + 3j, 6 + 5j}
 
 
 def distance(p):
@@ -114,5 +119,5 @@ assert solve('R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51',
 
 
 with open("puzzle-input.txt") as f:
-    [first, second] = map(wire_points, f.read().split())
-    print(solve(first, second))
+    [first, second] = f.read().split()
+print(int(solve(first, second)))
