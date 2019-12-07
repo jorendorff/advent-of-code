@@ -86,6 +86,7 @@ import sys; sys.path.append("..")
 from intcode.interpreter import load, parse, run
 import itertools
 
+
 def all_permutations(program):
     for seq in itertools.permutations(range(5)):
         signal = 0
@@ -93,21 +94,30 @@ def all_permutations(program):
             [signal] = run(program, [phase, signal])
         yield signal, seq
 
+
 def max_thruster_signal(program):
     """Returns a pair (signal, seq) with maximum signal."""
     if isinstance(program, str):
         program = parse(program)
     return max(all_permutations(program))
 
-assert max_thruster_signal('3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0') == (43210, (4,3,2,1,0))
 
-assert max_thruster_signal('3,23,3,24,1002,24,10,24,1002,23,-1,23,101,5,23,23,1,24,23,23,4,23,99,0,0')\
+assert max_thruster_signal('3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0') \
+    == (43210, (4,3,2,1,0))
+
+assert max_thruster_signal('3,23,3,24,1002,24,10,24,1002,23,-1,23,'
+                           '101,5,23,23,1,24,23,23,4,23,99,0,0') \
     == (54321, (0,1,2,3,4))
 
-assert max_thruster_signal('3,31,3,32,1002,32,10,32,1001,31,-2,31,1007,31,0,33,1002,33,7,33,1,33,31,31,1,32,31,31,4,31,99,0,0,0') \
+assert max_thruster_signal('3,31,3,32,1002,32,10,32,1001,31,-2,31,1007,31,0,33,'
+                           '1002,33,7,33,1,33,31,31,1,32,31,31,4,31,99,0,0,0') \
     == (65210, (1,0,4,3,2))
+
 
 def main():
     program = load()
     signal, seq = max_thruster_signal(program)
     print(signal)
+
+
+main()
