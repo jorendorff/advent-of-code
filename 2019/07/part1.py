@@ -82,7 +82,7 @@ signal that can be sent to the thrusters?
 
 """
 
-import sys; sys.path.append("../intcode")
+import sys; sys.path.append("..")
 from intcode.interpreter import load, parse, run
 import itertools
 
