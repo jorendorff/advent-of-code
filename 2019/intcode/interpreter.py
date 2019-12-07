@@ -1,15 +1,18 @@
-def vm(memory, inputs):
-    """Run a program, modifying `memory` in place.
+class IntcodeVM:
+    def __init__(self, program):
+        self.memory = list(program)
+        self.ip = 0
+        self.state = 'start'
 
-    This generator yields the program's outputs and returns `memory`.
-    """
-
-    def get(operand_index):
-        operand = memory[ip + operand_index]
+    def _get(self, operand_index):
+        """Get an operand for the current instruction."""
+        ip = self.ip
+        modes = self.memory[ip] // 100
+        operand = self.memory[ip + operand_index]
         mode = modes // (10 ** (operand_index - 1)) % 10
         if mode == 0:
             # position mode
-            return memory[operand]
+            return self.memory[operand]
         elif mode == 1:
             # immediate mode
             return operand
@@ -17,57 +20,100 @@ def vm(memory, inputs):
             raise ValueError("invalid mode {} for operand {} of instruction at ip={}"
                              .format(mode, operand_index, ip))
 
+    def trace(self, message, *args):
+        #print("* " + message.format(*args))
+        pass
+
+    def run_some(self):
+        """Run until the next input, output, or halt instruction."""
+        assert self.state != 'input'
+        while True:
+            self.trace("running instruction at {}", self.ip)
+            insn = self.memory[self.ip]
+            if insn < 0:
+                raise ValueError("negative instruction at ip={}, seems fishy"
+                                 .format(self.ip))
+            opcode = insn % 100
+            if opcode in (1, 2):
+                # add / mul
+                a, b, out_addr = self._get(1), self._get(2), self.memory[self.ip + 3]
+                if opcode == 1:
+                    c = a + b
+                else:
+                    c = a * b
+                self.memory[out_addr] = c
+                self.ip += 4
+            elif opcode == 3:
+                # input
+                self.state = 'input'
+                return
+            elif opcode == 4:
+                # output
+                self.last_output_value = self._get(1)
+                self.state = 'output'
+                self.trace("sending output {}", self.last_output_value)
+                self.ip += 2
+                return
+            elif opcode == 5:
+                # jump-if-true
+                cond, target = self._get(1), self._get(2)
+                self.ip = target if cond != 0 else self.ip + 3
+            elif opcode == 6:
+                # jump-if-false
+                cond, target = self._get(1), self._get(2)
+                self.ip = target if cond == 0 else self.ip + 3
+            elif opcode == 7:
+                # less than
+                a, b, out_addr = self._get(1), self._get(2), self.memory[self.ip + 3]
+                self.memory[out_addr] = int(a < b)
+                self.ip += 4
+            elif opcode == 8:
+                # equals
+                a, b, out_addr = self._get(1), self._get(2), self.memory[self.ip + 3]
+                self.memory[out_addr] = int(a == b)
+                self.ip += 4
+            elif opcode == 99:
+                # halt
+                self.trace("halt")
+                self.state = 'halt'
+                return
+            else:
+                raise ValueError("unrecognized opcode {} at ip={}"
+                                 .format(opcode, self.ip))
+
+    def send(self, input_value):
+        """Resume at an input instruction."""
+        assert self.state == 'input'
+        assert self.memory[self.ip] % 100 == 3  # input
+
+        self.trace("received input {}", input_value)
+
+        out_addr = self.memory[self.ip + 1]
+        self.memory[out_addr] = input_value
+        self.ip += 2
+        self.state = None
+        return self.run_some()
+
+
+def vm(memory, inputs=()):
+    """Run a program, modifying `memory` in place.
+
+    This generator yields the program's outputs and returns `memory`.
+    """
+
+    vm = IntcodeVM([])
+    vm.memory = memory  # modify this list directly
     inputs = iter(inputs)
 
-    ip = 0  # instruction pointer
-    while True:
-        insn = memory[ip]
-        if insn < 0:
-            raise ValueError("negative instruction at ip={}, seems fishy"
-                             .format(ip))
-        modes, opcode = divmod(insn, 100)
-        if opcode in (1, 2):
-            a = get(1)
-            b = get(2)
-            out_addr = memory[ip + 3]
-            if opcode == 1:
-                c = a + b
-            else:
-                c = a * b
-            memory[out_addr] = c
-            ip += 4
-        elif opcode == 3:
-            # input
-            out_addr = memory[ip + 1]
-            memory[out_addr] = next(inputs)
-            ip += 2
-        elif opcode == 4:
-            # output
-            yield get(1)
-            ip += 2
-        elif opcode == 5:
-            # jump-if-true
-            cond, target = get(1), get(2)
-            ip = target if cond != 0 else ip + 3
-        elif opcode == 6:
-            # jump-if-false
-            cond, target = get(1), get(2)
-            ip = target if cond == 0 else ip + 3
-        elif opcode == 7:
-            # less than
-            a, b, out_addr = get(1), get(2), memory[ip + 3]
-            memory[out_addr] = int(a < b)
-            ip += 4
-        elif opcode == 8:
-            # equals
-            a, b, out_addr = get(1), get(2), memory[ip + 3]
-            memory[out_addr] = int(a == b)
-            ip += 4
-        elif opcode == 99:
-            break
+    vm.run_some()
+    while vm.state != 'halt':
+        if vm.state == 'input':
+            vm.send(next(inputs))
         else:
-            raise ValueError("unrecognized opcode {} at ip={}"
-                             .format(opcode, ip))
+            assert vm.state == 'output'
+            yield vm.last_output_value
+            vm.run_some()
+
     return memory
 
 
