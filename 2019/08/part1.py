@@ -52,7 +52,7 @@ class SpaceImage:
     def load(cls, filename, width, height):
         with open(filename) as f:
             text = f.read().strip()
-        cls.from_text(width, height, text)
+        return cls.from_text(width, height, text)
 
     @classmethod
     def from_text(cls, width, height, text):
@@ -63,11 +63,14 @@ class SpaceImage:
         return cls(layers)
 
 
+WIDTH = 25
+HEIGHT = 6
+
 def main():
-    img = SpaceImage.load("puzzle-input.txt")
+    img = SpaceImage.load("puzzle-input.txt", WIDTH, HEIGHT)
 
     def count_digits_in_layer(layer_index, digit):
-        return sum(1 for row in img.layers[i] for c in row if c == digit))
+        return sum(1 for row in img.layers[layer_index] for c in row if c == digit)
     
     # find which layer contains the fewest 0 digits.
     idx = min(range(len(img.layers)),
