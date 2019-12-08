@@ -55,7 +55,7 @@ loop. What is the highest signal that can be sent to the thrusters?
 """
 
 import sys; sys.path.append("..")
-from intcode.interpreter import IntcodeVM
+from intcode.interpreter import IntcodeVM, load, parse
 import itertools
 
 
@@ -64,7 +64,7 @@ def thruster_signal(program, seq):
     for phase in seq:
         vm = IntcodeVM(program)
         vm.run_some()
-        vm.send_input(phase)
+        vm.send(phase)
         if vm.state != 'input':
             raise ValueError("program failed to input two values on startup")
         processes.append(vm)
@@ -73,7 +73,7 @@ def thruster_signal(program, seq):
     any_halted = False
     while not any_halted:
         for stage in processes:
-            stage.send_input(signal)
+            stage.send(signal)
             if stage.state != 'output':
                 raise ValueError("program must alternate between input and output")
 
@@ -84,15 +84,17 @@ def thruster_signal(program, seq):
             elif stage.state != 'input':
                 raise ValueError("program must alternate between input and output")
 
-    print([stage.state for stage in processes])
+    if not all(stage.state == 'halt' for stage in processes):
+        raise ValueError("not all programs halted")
+
     return signal
 
 
 # This program passes the signal through twice unchanged.
-assert thruster_signal([3,0,3,0,4,0,3,0,4,0,99], [0, 0, 0, 0, 0]) == 0
+assert thruster_signal([3,0, 3,0, 4,0, 3,0, 4,0, 99], [0, 0, 0, 0, 0]) == 0
 
 # This program adds the phase to the signal.
-assert thruster_signal([3,0,3,1,2,0,1,1,4,1,99], [1, 2, 3, 4, 5]) == 15
+assert thruster_signal([3,0, 3,1, 1,0,1,1, 4,1, 99], [1, 2, 3, 4, 5]) == 15
 
 
 def all_permutations(program):
