@@ -80,4 +80,5 @@ def main():
     print(count_digits_in_layer(idx, '1') * count_digits_in_layer(idx, '2'))
 
 
-main()
+if __name__ == '__main__':
+    main()
