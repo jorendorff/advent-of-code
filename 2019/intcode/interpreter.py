@@ -1,8 +1,27 @@
 class IntcodeVM:
-    def __init__(self, program):
+    def __init__(self, program, input=None, output=None):
+        """Copy `program` into the new VM.
+
+        input - Determines the behavior of the input instruction. Must be one of:
+            iterable: the input instruction takes values from this iterator.
+            callable: the input instruction gets its value by calling this value with no arguments.
+            None: the input instruction suspends the VM.
+
+        output - Determines the behavior of the output instruction.
+            callable: the output instruction calls it, passing an integer value.
+            None: the output instruction suspends the VM.
+        """
+
         self.memory = list(program)
         self.ip = 0
         self.state = 'start'
+        if input is None:
+            self.input = None
+        elif callable(input):
+            self.input = input
+        else:
+            self.input = iter(input).__next__
+        self.output = output
 
     def _get(self, operand_index):
         """Get an operand for the current instruction."""
@@ -35,7 +54,7 @@ class IntcodeVM:
                                  .format(self.ip))
             opcode = insn % 100
             if opcode in (1, 2):
-                # add / mul
+                # add/mul v1, v2 -> addr
                 a, b, out_addr = self._get(1), self._get(2), self.memory[self.ip + 3]
                 if opcode == 1:
                     c = a + b
@@ -44,31 +63,41 @@ class IntcodeVM:
                 self.memory[out_addr] = c
                 self.ip += 4
             elif opcode == 3:
-                # input
-                self.state = 'input'
-                return
-            elif opcode == 4:
-                # output
-                self.last_output_value = self._get(1)
-                self.state = 'output'
-                self.trace("sending output {}", self.last_output_value)
+                # input -> addr
+                if self.input is None:
+                    self.trace("suspending to wait for input")
+                    self.state = 'input'
+                    return
+                addr = self.memory[self.ip + 1]
+                self.memory[addr] = self.input()
                 self.ip += 2
-                return
+            elif opcode == 4:
+                # output v1
+                value = self._get(1)
+                if self.output is None:
+                    # Suspend for output.
+                    self.trace("suspending to output {}", value)
+                    self.last_output_value = value
+                    self.state = 'output'
+                    self.ip += 2
+                    return
+                self.output(value)
+                self.ip += 2
             elif opcode == 5:
-                # jump-if-true
+                # jump-if-true v, dest
                 cond, target = self._get(1), self._get(2)
                 self.ip = target if cond != 0 else self.ip + 3
             elif opcode == 6:
-                # jump-if-false
+                # jump-if-false v, dest
                 cond, target = self._get(1), self._get(2)
                 self.ip = target if cond == 0 else self.ip + 3
             elif opcode == 7:
-                # less than
+                # lt v1, v2 -> addr
                 a, b, out_addr = self._get(1), self._get(2), self.memory[self.ip + 3]
                 self.memory[out_addr] = int(a < b)
                 self.ip += 4
             elif opcode == 8:
-                # equals
+                # eq v1, v2 -> addr
                 a, b, out_addr = self._get(1), self._get(2), self.memory[self.ip + 3]
                 self.memory[out_addr] = int(a == b)
                 self.ip += 4
@@ -95,24 +124,21 @@ class IntcodeVM:
         return self.run_some()
 
 
-def vm(memory, inputs=()):
+def vm(memory, input=()):
     """Run a program, modifying `memory` in place.
 
     This generator yields the program's outputs and returns `memory`.
     """
 
-    vm = IntcodeVM([])
+    vm = IntcodeVM([], input=input)
     vm.memory = memory  # modify this list directly
     inputs = iter(inputs)
 
     vm.run_some()
     while vm.state != 'halt':
-        if vm.state == 'input':
-            vm.send(next(inputs))
-        else:
-            assert vm.state == 'output'
-            yield vm.last_output_value
-            vm.run_some()
+        assert vm.state == 'output'
+        yield vm.last_output_value
+        vm.run_some()
 
     return memory
 
