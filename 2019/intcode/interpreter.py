@@ -56,6 +56,20 @@ class IntcodeVM:
             raise ValueError("invalid mode {} for operand {} of instruction at ip={}"
                              .format(mode, operand_index, ip))
 
+    def _get_addr(self, operand_index):
+        """Get the target address for an output operand."""
+        ip = self.ip
+        modes = self.memory[ip] // 100
+        operand = self.memory[ip + operand_index]
+        mode = modes // (10 ** (operand_index - 1)) % 10
+        if mode == 0:
+            return operand
+        elif mode == 2:
+            return operand + self.relative_base
+        else:
+            raise ValueError("invalid mode {} for output operand {} of instruction at ip={}"
+                             .format(mode, operand_index, ip))
+
     def trace(self, message, *args):
         #print("* " + message.format(*args))
         pass
@@ -72,7 +86,7 @@ class IntcodeVM:
             opcode = insn % 100
             if opcode in (1, 2):
                 # add/mul v1, v2 -> addr
-                a, b, out_addr = self._get(1), self._get(2), self.memory[self.ip + 3]
+                a, b, out_addr = self._get(1), self._get(2), self._get_addr(3)
                 if opcode == 1:
                     c = a + b
                 else:
@@ -85,7 +99,7 @@ class IntcodeVM:
                     self.trace("suspending to wait for input")
                     self.state = 'input'
                     return
-                addr = self.memory[self.ip + 1]
+                addr = self._get_addr(1)
                 self._store(addr, self.input())
                 self.ip += 2
             elif opcode == 4:
@@ -110,16 +124,16 @@ class IntcodeVM:
                 self.ip = target if cond == 0 else self.ip + 3
             elif opcode == 7:
                 # lt v1, v2 -> addr
-                a, b, out_addr = self._get(1), self._get(2), self.memory[self.ip + 3]
+                a, b, out_addr = self._get(1), self._get(2), self._get_addr(3)
                 self._store(out_addr, int(a < b))
                 self.ip += 4
             elif opcode == 8:
                 # eq v1, v2 -> addr
-                a, b, out_addr = self._get(1), self._get(2), self.memory[self.ip + 3]
+                a, b, out_addr = self._get(1), self._get(2), self._get_addr(3)
                 self._store(out_addr, int(a == b))
                 self.ip += 4
             elif opcode == 9:
-                # rbo v
+                # arb v
                 self.relative_base += self._get(1)
                 self.ip += 2
             elif opcode == 99:
