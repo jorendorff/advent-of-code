@@ -14,6 +14,7 @@ class IntcodeVM:
 
         self.memory = list(program)
         self.ip = 0
+        self.relative_base = 0
         self.state = 'start'
         if input is None:
             self.input = None
@@ -23,6 +24,19 @@ class IntcodeVM:
             self.input = iter(input).__next__
         self.output = output
 
+    def _load(self, addr):
+        if 0 <= addr < len(self.memory):
+            return self.memory[addr]
+        else:
+            return 0
+
+    def _store(self, addr, value):
+        if addr < 0:
+            raise ValueError(f"store to negative address {addr}")
+        if addr >= len(self.memory):
+            self.memory += [0] * (addr - len(self.memory) + 1)
+        self.memory[addr] = value
+
     def _get(self, operand_index):
         """Get an operand for the current instruction."""
         ip = self.ip
@@ -31,10 +45,13 @@ class IntcodeVM:
         mode = modes // (10 ** (operand_index - 1)) % 10
         if mode == 0:
             # position mode
-            return self.memory[operand]
+            return self._load(operand)
         elif mode == 1:
             # immediate mode
             return operand
+        elif mode == 2:
+            # relative mode
+            return self._load(operand + self.relative_base)
         else:
             raise ValueError("invalid mode {} for operand {} of instruction at ip={}"
                              .format(mode, operand_index, ip))
@@ -60,7 +77,7 @@ class IntcodeVM:
                     c = a + b
                 else:
                     c = a * b
-                self.memory[out_addr] = c
+                self._store(out_addr, c)
                 self.ip += 4
             elif opcode == 3:
                 # input -> addr
@@ -69,7 +86,7 @@ class IntcodeVM:
                     self.state = 'input'
                     return
                 addr = self.memory[self.ip + 1]
-                self.memory[addr] = self.input()
+                self._store(addr, self.input())
                 self.ip += 2
             elif opcode == 4:
                 # output v1
@@ -94,13 +111,17 @@ class IntcodeVM:
             elif opcode == 7:
                 # lt v1, v2 -> addr
                 a, b, out_addr = self._get(1), self._get(2), self.memory[self.ip + 3]
-                self.memory[out_addr] = int(a < b)
+                self._store(out_addr, int(a < b))
                 self.ip += 4
             elif opcode == 8:
                 # eq v1, v2 -> addr
                 a, b, out_addr = self._get(1), self._get(2), self.memory[self.ip + 3]
-                self.memory[out_addr] = int(a == b)
+                self._store(out_addr, int(a == b))
                 self.ip += 4
+            elif opcode == 9:
+                # rbo v
+                self.relative_base += self._get(1)
+                self.ip += 2
             elif opcode == 99:
                 # halt
                 self.trace("halt")
@@ -117,9 +138,11 @@ class IntcodeVM:
 
         self.trace("received input {}", input_value)
 
+        # second half of input instruction
         out_addr = self.memory[self.ip + 1]
-        self.memory[out_addr] = input_value
+        self._store(out_addr, input_value)
         self.ip += 2
+
         self.state = None
         return self.run_some()
 
@@ -132,7 +155,6 @@ def vm(memory, input=()):
 
     vm = IntcodeVM([], input=input)
     vm.memory = memory  # modify this list directly
-    inputs = iter(inputs)
 
     vm.run_some()
     while vm.state != 'halt':
@@ -192,14 +214,29 @@ assert _compute([1101,100,-1,4,0]) == [1101,100,-1,4,99]
 
 # High-level interface to the vm
 
-def run(program, inputs=[]):
+def run(program, input=[]):
     """Run an intcode program and return the list of its outputs.
 
     This does not modify the program; it makes a copy.
     """
-    memory = list(program)
-    it = vm(memory, inputs)
-    return list(it)
+    log = []
+    vm = IntcodeVM(program, input=input, output=log.append)
+    vm.run_some()
+    return log
+
+
+
+def test_day_9():
+    assert run([109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99]) \
+                 == [109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99]
+
+    [result] = run([1102,34915192,34915192,7,4,7,99,0])
+    assert len(str(result)) == 16
+
+    assert run([104,1125899906842624,99]) == [1125899906842624]
+
+
+test_day_9()
 
 
 def load(filename="puzzle-input.txt"):
