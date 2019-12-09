@@ -9,6 +9,7 @@ INSTRUCTION_SET = {
     6: ("jump-if-false", 2, 0),
     7: ("lt", 2, 1),
     8: ("eq", 2, 1),
+    9: ("arb", 1, 0),
     99: ("halt", 0, 0),
 }
 
@@ -62,12 +63,10 @@ def decode_instruction(memory, ip):
             operands.append(f"[{n}]")
         elif mode == 1:
             operands.append(str(n))
+        elif mode == 2:
+            operands.append(f"rel[{n}]")
         else:
             operands.append(f"???mode{mode}({n})")
-
-    # There shouldn't be any modes left over.
-    if modes:
-        return Instruction(ip, "???" + str(insn), ()), ip + 1
 
     # Decode the output operand, if any.
     for _ in range(dest_count):
@@ -76,7 +75,19 @@ def decode_instruction(memory, ip):
             continue
         n = memory[readp]
         readp += 1
-        operands.append("-> " + str(n))
+        modes, mode = divmod(modes, 10)
+        # Note: mode 1 (immediate mode) not allowed here
+        if mode == 0:
+            operands.append(f"-> [{n}]")
+        elif mode == 2:
+            operands.append(f"-> rel[{n}]")
+        else:
+            operands.append(f"???mode{mode}({n})")
+
+    # There shouldn't be any modes left over.
+    if modes:
+        return Instruction(ip, "???" + str(insn), ()), ip + 1
+
 
     return Instruction(ip, insn_name, operands), readp
 
