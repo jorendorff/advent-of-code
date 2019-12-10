@@ -142,6 +142,31 @@ def all_lines_of_sight(size, p):
                     yield dx, dy
 
 
+assert sorted(all_lines_of_sight((5, 5), (3, 4)))[:16] == [
+    (-3, -4),
+    (-3, -2),
+    (-3, -1),
+    (-2, -3),
+    (-2, -1),
+    (-1, -4),
+    (-1, -3),
+    (-1, -2),
+    (-1, -1),
+    (-1, 0),
+    (0, -1),
+    (1, -4),
+    (1, -3),
+    (1, -2),
+    (1, -1),
+    (1, 0),
+]
+
+def point_is_in_range(size, p):
+    w, h = size
+    x, y = p
+    return 0 <= x < w and 0 <= y < h
+
+
 def trace_line_of_sight(size, p, dp):
     x, y = p
     dx, dy = dp
@@ -151,19 +176,6 @@ def trace_line_of_sight(size, p, dp):
         yield x, y
         x += dx
         y += dy
-
-
-def point_is_in_range(size, p):
-    w, h = size
-    x, y = p
-    return 0 <= x < w and 0 <= y < h
-
-
-def parse_grid(text):
-    lines = text.splitlines()
-    width = len(lines)
-    height = len(lines[0])
-    return (width, height), find_asteroids(lines)
 
 
 def find_asteroids(lines):
@@ -178,18 +190,47 @@ def find_asteroids(lines):
                 raise ValueError(f"unexpected character {c!r} at ({x}, {y})")
 
 
+def parse_grid(text):
+    lines = text.splitlines()
+    width = len(lines)
+    height = len(lines[0])
+    return (width, height), list(find_asteroids(lines))
+
+
 def count_visible_asteroids(size, asteroids, p):
     asteroids = set(asteroids)
     count = 0
     for dp in all_lines_of_sight(size, p):
-        if any(p in asteroids for p in trace_line_of_sight(dp)):
+        if any(q in asteroids for q in trace_line_of_sight(size, p, dp)):
             count += 1
     return count
 
 
+def test_parse_grid():
+    grid = '''\
+.#..#
+.....
+#####
+....#
+...##
+'''
+    (w, h), a = parse_grid(grid)
+    assert w == 5
+    assert h == 5
+    assert len(a) == 10
+    assert a[0] == (1, 0)
+    assert a[-1] == (4, 4)
+
+    assert count_visible_asteroids((w, h), a, (1, 0)) == 7
+    assert count_visible_asteroids((w, h), a, (4, 0)) == 7
+
+
+test_parse_grid()
+
+
 def candidates(size, asteroids):
     for p in asteroids:
-        yield p, count_visible_asteroids(grid, p)
+        yield p, count_visible_asteroids(size, asteroids, p)
 
 
 def best(size, asteroids):
@@ -277,7 +318,8 @@ def main():
     with open("puzzle-input.txt") as f:
         text = f.read()
     size, asteroids = list(parse_grid(text))
-
+    p, count = best(size, asteroids)
+    print(count)
 
 if __name__ == '__main__':
     main()
