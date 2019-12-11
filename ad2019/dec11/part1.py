@@ -117,7 +117,8 @@ class Robot:
     def paint(self, color):
         self.painted_panels.add(self.loc)
         if color == 0:
-            self.white_panels.remove(self.loc)
+            if self.loc in self.white_panels:
+                self.white_panels.remove(self.loc)
         elif color == 1:
             self.white_panels.add(self.loc)
         else:
@@ -159,6 +160,7 @@ def robot_test():
     assert robot.access_camera() == 0
     robot.command(1)  # paint white
     robot.command(0)  # turn left
+    assert robot.loc == -1 + 0j
     assert robot.painted_panel_count() == 1
     assert robot.access_camera() == 0
     robot.command(0)  # paint black
@@ -168,7 +170,8 @@ def robot_test():
     robot.command(1)  # paint white
     robot.command(0)  # turn left
     assert robot.access_camera() == 1
-    assert robot.painted_panel_count() == 3
+    assert robot.painted_panel_count() == 4
+    assert len(robot.white_panels) == 3
 
     for cmd in [0,1, 1,0, 1,0]:
         robot.command(cmd)
