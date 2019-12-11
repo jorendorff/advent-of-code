@@ -192,8 +192,8 @@ def find_asteroids(lines):
 
 def parse_grid(text):
     lines = text.splitlines()
-    width = len(lines)
-    height = len(lines[0])
+    width = len(lines[0])
+    height = len(lines)
     return (width, height), list(find_asteroids(lines))
 
 
@@ -317,7 +317,7 @@ test('''\
 def main():
     with open("puzzle-input.txt") as f:
         text = f.read()
-    size, asteroids = list(parse_grid(text))
+    size, asteroids = parse_grid(text)
     p, count = best(size, asteroids)
     print(count)
 
