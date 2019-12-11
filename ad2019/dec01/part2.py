@@ -34,6 +34,9 @@ the fuel requirements for each module separately, then add them all up at the
 end.)
 """
 
+from lib.advent import *
+
+
 def fuel_required(m):
     """Compute fuel required for a module of mass m."""
     return max(0, m // 3 - 2)
@@ -55,9 +58,8 @@ assert total_fuel_required(1969) == 966
 assert total_fuel_required(100756) == 50346
 
 total = 0
-with open('puzzle-input.txt') as f:
-    for line in f:
-        mass = int(line)
-        total += total_fuel_required(mass)
+for line in puzzle_input().splitlines():
+    mass = int(line)
+    total += total_fuel_required(mass)
 
 print(total)

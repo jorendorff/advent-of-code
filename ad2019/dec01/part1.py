@@ -36,10 +36,11 @@ spacecraft?
 # It would be easy to do this as a one-liner, but I decided to write Good
 # Procedural Code.
 
+from lib.advent import *
+
 total = 0
-with open('puzzle-input.txt') as f:
-    for line in f:
-        mass = int(line)
-        total += mass // 3 - 2
+for line in puzzle_input().splitlines():
+    mass = int(line)
+    total += mass // 3 - 2
 
 print(total)

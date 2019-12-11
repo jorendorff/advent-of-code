@@ -49,6 +49,7 @@ answer would be 1202.)
 
 
 import itertools, functools, operator
+from lib.advent import *
 
 
 # The brute solution would be to run the interpreter forward, in a nested loop.
@@ -302,8 +303,7 @@ assert process([1,0,0,3, 1,1,2,3, 1,3,4,3, 1,5,0,3, 99], 3) == Number(2)
 def main():
     TARGET = 19690720
 
-    with open("puzzle-input.txt") as f:
-        source = [int(word) for word in f.read().strip().split(',')]
+    source = [int(word) for word in puzzle_input().strip().split(',')]
 
     size = len(source)
     print(size, "ints read")
@@ -320,4 +320,5 @@ def main():
                 print(noun, verb, "==>", 100 * noun + verb)
 
 
-main()
+if __name__ == '__main__':
+    main()
