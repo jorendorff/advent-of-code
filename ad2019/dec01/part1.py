@@ -37,7 +37,7 @@ spacecraft?
 # Procedural Code.
 
 total = 0
-with open('input.txt') as f:
+with open('puzzle-input.txt') as f:
     for line in f:
         mass = int(line)
         total += mass // 3 - 2

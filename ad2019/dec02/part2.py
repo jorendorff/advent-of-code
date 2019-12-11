@@ -302,7 +302,7 @@ assert process([1,0,0,3, 1,1,2,3, 1,3,4,3, 1,5,0,3, 99], 3) == Number(2)
 def main():
     TARGET = 19690720
 
-    with open("input.txt") as f:
+    with open("puzzle-input.txt") as f:
         source = [int(word) for word in f.read().strip().split(',')]
 
     size = len(source)

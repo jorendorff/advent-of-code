@@ -55,7 +55,7 @@ assert total_fuel_required(1969) == 966
 assert total_fuel_required(100756) == 50346
 
 total = 0
-with open('input.txt') as f:
+with open('puzzle-input.txt') as f:
     for line in f:
         mass = int(line)
         total += total_fuel_required(mass)
