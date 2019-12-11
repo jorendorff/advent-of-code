@@ -83,24 +83,38 @@ get if you multiply its X coordinate by 100 and then add its Y coordinate? (For
 example, 8,2 becomes 802.)
 """
 
-import itertools
+import itertools, math
 from part1 import all_lines_of_sight, trace_line_of_sight, parse_grid, best
 
 
 def angle(dp):
     # There is probably a more precise way to do this.
     dx, dy = dp
-    return math.atan2(dx, dy)
+    a = math.atan2(dx, -dy)
+    if a < 0:
+        a += 2 * math.pi
+    return a
+
+
+assert angle((0, -1)) == 0.0
+assert abs(angle((1, -1)) - math.pi/4) < 1e-6
+assert abs(angle((-1, -1)) - 7 * math.pi/4) < 1e-6
+
 
 def vaporization_order(size, asteroids, p):
     lines = sorted(all_lines_of_sight(size, p), key=angle)
-    remaining = set(asteroid) - {p}
-    while remaining:
+    remaining = set(asteroids) - {p}
+    while lines:
+        hit_lines = []
         for dp in lines:
-            for q in trace_line_of_sight(p, dp):
+            for q in trace_line_of_sight(size, p, dp):
                 if q in remaining:
                     yield q
                     remaining.remove(q)
+                    hit_lines.append(dp)
+                    break
+        lines = hit_lines
+
 
 test_grid_1 = '''\
 .#....#####...#..
