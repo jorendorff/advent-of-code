@@ -2,6 +2,7 @@
 
 from collections import deque, defaultdict, namedtuple, Counter
 import itertools
+import math
 
 
 # Loading the puzzle input
@@ -14,6 +15,15 @@ def puzzle_input():
     filename = pathlib.Path(caller_script).parent / "puzzle-input.txt"
     with open(filename) as f:
         return f.read()
+
+
+# Pure math
+
+def lcm(*numbers):
+    a = 1
+    for n in numbers:
+        a = a * n // math.gcd(a, n)
+    return a
 
 
 # Functions on iterables (what I think of as sequences)
@@ -54,19 +64,17 @@ def fn_iter(f, start):
         x = f(x)
 
 class Cycle:
-    """Information about the sequence fn_iter(f, start) where f is pure and the chain eventually cycles."""
-    def __init__(self, f, start):
+    """Information about a sequence (of hashable values) that eventually cycles."""
+    def __init__(self, iterable):
         i = 0
         seen = {}
         seq = []
-        x = start
-        prev = None
-        while x not in seen:
+        for x in iterable:
+            if x in seen:
+                break
             seen[x] = i
             seq.append(x)
             i += 1
-            prev = x
-            x = f(x)
 
         c0 = seen[x]  # cycle start index
         self.prefix = seq[:c0]

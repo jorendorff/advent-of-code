@@ -210,20 +210,12 @@ What is the total energy in the system after simulating the moons given in your 
 
 import re
 from lib.advent import *
+from copy import deepcopy
 
-class Vec3:
-    def __init__(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z
 
+class Vec3(namedtuple("Vec3", "x y z")):
     def __add__(self, other):
         return Vec3(self.x + other.x, self.y + other.y, self.z + other.z)
-
-    def __iadd__(self, other):
-        self.x += other.x
-        self.y += other.y
-        self.x += other.z
 
     def __str__(self):
         return "<x=%3d, y=%3d, z=%3d>" % (self.x, self.y, self.z)
@@ -241,13 +233,15 @@ class Moon:
         return f'pos={self.pos}, vel={self.vel}'
 
     def attract(self, other):
-        for d in 'xyz':
-            self_d = getattr(self.pos, d)
-            other_d = getattr(other.pos, d)
+        other_vel = list(other.vel)
+        for d in range(3):
+            self_d = self.pos[d]
+            other_d = other.pos[d]
             if self_d < other_d:
-                setattr(other.vel, d, getattr(other.vel, d) - 1)
+                other_vel[d] -= 1
             elif self_d > other_d:
-                setattr(other.vel, d, getattr(other.vel, d) + 1)
+                other_vel[d] += 1
+        other.vel = Vec3(*other_vel)
 
     def total_energy(self):
         pot = self.pos.norm()
@@ -270,6 +264,13 @@ def tick(state):
         moon.pos += moon.vel
 
 
+def simulate(moons):
+    state = deepcopy(moons)
+    while True:
+        yield state
+        tick(state)
+
+
 def system_total_energy(state):
     return sum(moon.total_energy() for moon in state)
 
@@ -286,11 +287,12 @@ def parse_scenario(text):
     return [Moon(parse_point(line.strip())) for line in text.splitlines()]
 
 
-def simulation_log(state, nsteps, stride=1):
+def simulation_log(moons, nsteps, stride=1):
     log = ""
+    state = deepcopy(moons)
     for i in range(nsteps + 1):
         if i % stride == 0:
-            log += f"After {i} steps:"
+            log += f"After {i} step{'s' if i != 1 else ''}:\n"
             for moon in state:
                 log += f"{moon}\n"
             log += "\n"
@@ -298,97 +300,110 @@ def simulation_log(state, nsteps, stride=1):
             tick(state)
     return log
 
-TEST_INPUT = """\
+
+TEST_1_INPUT = parse_scenario("""\
 <x=-1, y=0, z=2>
 <x=2, y=-10, z=-7>
 <x=4, y=-8, z=8>
 <x=3, y=5, z=-1>
-"""
+""")
 
-assert simulation_log(parse_scenario(TEST_INPUT), 10) == """\
+TEST_1_EXPECTED = """\
 After 0 steps:
-pos=<x=-1, y=  0, z= 2>, vel=<x= 0, y= 0, z= 0>
-pos=<x= 2, y=-10, z=-7>, vel=<x= 0, y= 0, z= 0>
-pos=<x= 4, y= -8, z= 8>, vel=<x= 0, y= 0, z= 0>
-pos=<x= 3, y=  5, z=-1>, vel=<x= 0, y= 0, z= 0>
+pos=<x= -1, y=  0, z=  2>, vel=<x=  0, y=  0, z=  0>
+pos=<x=  2, y=-10, z= -7>, vel=<x=  0, y=  0, z=  0>
+pos=<x=  4, y= -8, z=  8>, vel=<x=  0, y=  0, z=  0>
+pos=<x=  3, y=  5, z= -1>, vel=<x=  0, y=  0, z=  0>
 
 After 1 step:
-pos=<x= 2, y=-1, z= 1>, vel=<x= 3, y=-1, z=-1>
-pos=<x= 3, y=-7, z=-4>, vel=<x= 1, y= 3, z= 3>
-pos=<x= 1, y=-7, z= 5>, vel=<x=-3, y= 1, z=-3>
-pos=<x= 2, y= 2, z= 0>, vel=<x=-1, y=-3, z= 1>
+pos=<x=  2, y= -1, z=  1>, vel=<x=  3, y= -1, z= -1>
+pos=<x=  3, y= -7, z= -4>, vel=<x=  1, y=  3, z=  3>
+pos=<x=  1, y= -7, z=  5>, vel=<x= -3, y=  1, z= -3>
+pos=<x=  2, y=  2, z=  0>, vel=<x= -1, y= -3, z=  1>
 
 After 2 steps:
-pos=<x= 5, y=-3, z=-1>, vel=<x= 3, y=-2, z=-2>
-pos=<x= 1, y=-2, z= 2>, vel=<x=-2, y= 5, z= 6>
-pos=<x= 1, y=-4, z=-1>, vel=<x= 0, y= 3, z=-6>
-pos=<x= 1, y=-4, z= 2>, vel=<x=-1, y=-6, z= 2>
+pos=<x=  5, y= -3, z= -1>, vel=<x=  3, y= -2, z= -2>
+pos=<x=  1, y= -2, z=  2>, vel=<x= -2, y=  5, z=  6>
+pos=<x=  1, y= -4, z= -1>, vel=<x=  0, y=  3, z= -6>
+pos=<x=  1, y= -4, z=  2>, vel=<x= -1, y= -6, z=  2>
 
 After 3 steps:
-pos=<x= 5, y=-6, z=-1>, vel=<x= 0, y=-3, z= 0>
-pos=<x= 0, y= 0, z= 6>, vel=<x=-1, y= 2, z= 4>
-pos=<x= 2, y= 1, z=-5>, vel=<x= 1, y= 5, z=-4>
-pos=<x= 1, y=-8, z= 2>, vel=<x= 0, y=-4, z= 0>
+pos=<x=  5, y= -6, z= -1>, vel=<x=  0, y= -3, z=  0>
+pos=<x=  0, y=  0, z=  6>, vel=<x= -1, y=  2, z=  4>
+pos=<x=  2, y=  1, z= -5>, vel=<x=  1, y=  5, z= -4>
+pos=<x=  1, y= -8, z=  2>, vel=<x=  0, y= -4, z=  0>
 
 After 4 steps:
-pos=<x= 2, y=-8, z= 0>, vel=<x=-3, y=-2, z= 1>
-pos=<x= 2, y= 1, z= 7>, vel=<x= 2, y= 1, z= 1>
-pos=<x= 2, y= 3, z=-6>, vel=<x= 0, y= 2, z=-1>
-pos=<x= 2, y=-9, z= 1>, vel=<x= 1, y=-1, z=-1>
+pos=<x=  2, y= -8, z=  0>, vel=<x= -3, y= -2, z=  1>
+pos=<x=  2, y=  1, z=  7>, vel=<x=  2, y=  1, z=  1>
+pos=<x=  2, y=  3, z= -6>, vel=<x=  0, y=  2, z= -1>
+pos=<x=  2, y= -9, z=  1>, vel=<x=  1, y= -1, z= -1>
 
 After 5 steps:
-pos=<x=-1, y=-9, z= 2>, vel=<x=-3, y=-1, z= 2>
-pos=<x= 4, y= 1, z= 5>, vel=<x= 2, y= 0, z=-2>
-pos=<x= 2, y= 2, z=-4>, vel=<x= 0, y=-1, z= 2>
-pos=<x= 3, y=-7, z=-1>, vel=<x= 1, y= 2, z=-2>
+pos=<x= -1, y= -9, z=  2>, vel=<x= -3, y= -1, z=  2>
+pos=<x=  4, y=  1, z=  5>, vel=<x=  2, y=  0, z= -2>
+pos=<x=  2, y=  2, z= -4>, vel=<x=  0, y= -1, z=  2>
+pos=<x=  3, y= -7, z= -1>, vel=<x=  1, y=  2, z= -2>
 
 After 6 steps:
-pos=<x=-1, y=-7, z= 3>, vel=<x= 0, y= 2, z= 1>
-pos=<x= 3, y= 0, z= 0>, vel=<x=-1, y=-1, z=-5>
-pos=<x= 3, y=-2, z= 1>, vel=<x= 1, y=-4, z= 5>
-pos=<x= 3, y=-4, z=-2>, vel=<x= 0, y= 3, z=-1>
+pos=<x= -1, y= -7, z=  3>, vel=<x=  0, y=  2, z=  1>
+pos=<x=  3, y=  0, z=  0>, vel=<x= -1, y= -1, z= -5>
+pos=<x=  3, y= -2, z=  1>, vel=<x=  1, y= -4, z=  5>
+pos=<x=  3, y= -4, z= -2>, vel=<x=  0, y=  3, z= -1>
 
 After 7 steps:
-pos=<x= 2, y=-2, z= 1>, vel=<x= 3, y= 5, z=-2>
-pos=<x= 1, y=-4, z=-4>, vel=<x=-2, y=-4, z=-4>
-pos=<x= 3, y=-7, z= 5>, vel=<x= 0, y=-5, z= 4>
-pos=<x= 2, y= 0, z= 0>, vel=<x=-1, y= 4, z= 2>
+pos=<x=  2, y= -2, z=  1>, vel=<x=  3, y=  5, z= -2>
+pos=<x=  1, y= -4, z= -4>, vel=<x= -2, y= -4, z= -4>
+pos=<x=  3, y= -7, z=  5>, vel=<x=  0, y= -5, z=  4>
+pos=<x=  2, y=  0, z=  0>, vel=<x= -1, y=  4, z=  2>
 
 After 8 steps:
-pos=<x= 5, y= 2, z=-2>, vel=<x= 3, y= 4, z=-3>
-pos=<x= 2, y=-7, z=-5>, vel=<x= 1, y=-3, z=-1>
-pos=<x= 0, y=-9, z= 6>, vel=<x=-3, y=-2, z= 1>
-pos=<x= 1, y= 1, z= 3>, vel=<x=-1, y= 1, z= 3>
+pos=<x=  5, y=  2, z= -2>, vel=<x=  3, y=  4, z= -3>
+pos=<x=  2, y= -7, z= -5>, vel=<x=  1, y= -3, z= -1>
+pos=<x=  0, y= -9, z=  6>, vel=<x= -3, y= -2, z=  1>
+pos=<x=  1, y=  1, z=  3>, vel=<x= -1, y=  1, z=  3>
 
 After 9 steps:
-pos=<x= 5, y= 3, z=-4>, vel=<x= 0, y= 1, z=-2>
-pos=<x= 2, y=-9, z=-3>, vel=<x= 0, y=-2, z= 2>
-pos=<x= 0, y=-8, z= 4>, vel=<x= 0, y= 1, z=-2>
-pos=<x= 1, y= 1, z= 5>, vel=<x= 0, y= 0, z= 2>
+pos=<x=  5, y=  3, z= -4>, vel=<x=  0, y=  1, z= -2>
+pos=<x=  2, y= -9, z= -3>, vel=<x=  0, y= -2, z=  2>
+pos=<x=  0, y= -8, z=  4>, vel=<x=  0, y=  1, z= -2>
+pos=<x=  1, y=  1, z=  5>, vel=<x=  0, y=  0, z=  2>
 
 After 10 steps:
-pos=<x= 2, y= 1, z=-3>, vel=<x=-3, y=-2, z= 1>
-pos=<x= 1, y=-8, z= 0>, vel=<x=-1, y= 1, z= 3>
-pos=<x= 3, y=-6, z= 1>, vel=<x= 3, y= 2, z=-3>
-pos=<x= 2, y= 0, z= 4>, vel=<x= 1, y=-1, z=-1>
+pos=<x=  2, y=  1, z= -3>, vel=<x= -3, y= -2, z=  1>
+pos=<x=  1, y= -8, z=  0>, vel=<x= -1, y=  1, z=  3>
+pos=<x=  3, y= -6, z=  1>, vel=<x=  3, y=  2, z= -3>
+pos=<x=  2, y=  0, z=  4>, vel=<x=  1, y= -1, z= -1>
 
 """
+
+
+def test1a():
+    test_1_actual = simulation_log(TEST_1_INPUT, 10)
+    for la, lx in zip(TEST_1_EXPECTED.splitlines(), test_1_actual.splitlines()):
+        assert(la == lx)
+    assert test_1_actual == TEST_1_EXPECTED
+
+
+test1a()
 
 
 def test1b():
-    moons = parse_scenario(TEST_INPUT)
+    moons = deepcopy(TEST_1_INPUT)
     for i in range(10):
-        tick(state)
+        tick(moons)
     assert system_total_energy(moons) == 179
+
 
 test1b()
 
-second_example = """\
-x=-8, y=-10, z=0>
+
+TEST_2_INPUT = parse_scenario("""\
+<x=-8, y=-10, z=0>
 <x=5, y=5, z=10>
 <x=2, y=-7, z=3>
 <x=9, y=-8, z=-3>
-"""
+""")
 
 second_example_expected_output = """\
 After 0 steps:
@@ -460,7 +475,7 @@ pos=<x= 16, y=-13, z= 23>, vel=<x=  7, y=  1, z=  1>
 
 
 def test2():
-    moons = parse_scenario(second_example)
+    moons = TEST_2_INPUT
     assert simulation_log(moons, 100, 10) == second_example_expected_output
     assert system_total_energy(moons) == 1940
 
