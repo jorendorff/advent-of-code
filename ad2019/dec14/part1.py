@@ -130,10 +130,11 @@ def parse_reactions(text):
     return reactions
 
 
-def solve(text):
-    reactions = parse_reactions(text)
+def solve(reactions, target_amount=1):
+    if isinstance(reactions, str):
+        reactions = parse_reactions(reactions)
     budget = defaultdict(int)
-    budget["FUEL"] = -1
+    budget["FUEL"] = -target_amount
     while True:
         # Figure out what we need to make.
         for chemical, amount in budget.items():
