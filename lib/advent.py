@@ -19,6 +19,11 @@ def puzzle_input():
 
 # Pure math
 
+def round_up(n, d):
+    return (n + d - 1) // d
+
+assert round_up(33, 10) == 4
+
 def lcm(*numbers):
     a = 1
     for n in numbers:
