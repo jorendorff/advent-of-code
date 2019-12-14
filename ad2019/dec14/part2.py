@@ -11,13 +11,16 @@ With that much ore, given the examples above:
 Given 1 trillion ORE, what is the maximum amount of FUEL you can produce?
 """
 
-import part1
+from lib.advent import *
+from . import part1
+
 
 # There may be a cleverer way to solve this, but the simplest thing is to
 # bisect. Surely this relation is monotonic.
 
 def can_produce(reactions, ore_amount, fuel_amount):
     return part1.solve(reactions, fuel_amount) <= ore_amount
+
 
 def bisect(predicate):
     """Return the maximum integer i such that predicate(i).
@@ -53,14 +56,14 @@ ORE_AMOUNT = 1_000_000_000_000  # One Trillion
 
 def solve(reactions):
     if isinstance(reactions, str):
-        reactions = part1.parse_reactions(reactionss)
+        reactions = part1.parse_reactions(reactions)
     
     return bisect(lambda n: can_produce(reactions, ORE_AMOUNT, n))
 
 
-assert solve(EXAMPLE3) == 82892753
-assert solve(EXAMPLE4) == 5586022
-assert solve(EXAMPLE5) == 460664
+assert solve(part1.EXAMPLE3) == 82892753
+assert solve(part1.EXAMPLE4) == 5586022
+assert solve(part1.EXAMPLE5) == 460664
 
 if __name__ == '__main__':
     print(solve(puzzle_input()))
