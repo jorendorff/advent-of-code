@@ -146,11 +146,12 @@ def solve(text):
                 budget[chemical] += output_amount * recipes_needed
                 assert budget[chemical] >= 0
                 assert budget[chemical] < output_amount
+                break
         else:
             # We don't need to make anything!
             break
 
-    return -needed['ORE']
+    return -budget['ORE']
 
 
 
@@ -166,6 +167,12 @@ EXAMPLE1 = """\
 assert parse_reactions(EXAMPLE1) == {
     'FUEL': (1, [(7, 'A'), (1, 'E')]),
     'E': (1, [(7, 'A'), (1, 'D')]),
+    'D': (1, [(7, 'A'), (1, 'C')]),
+    'C': (1, [(7, 'A'), (1, 'B')]),
+    'B': (1, [(1, 'ORE')]),
+    'A': (10, [(10, 'ORE')])
+}
+
 assert solve(EXAMPLE1) == 31
 
 EXAMPLE2 = """\
