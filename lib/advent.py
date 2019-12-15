@@ -101,7 +101,7 @@ class Cycle:
 
 class Vec2(tuple):
     def __new__(cls, x, y):
-        return tuple.__new__(cls, x, y)
+        return tuple.__new__(cls, (x, y))
 
     def __str__(self):
         return f"({self[0]}, {self[1]})"
@@ -109,11 +109,11 @@ class Vec2(tuple):
     def __repr__(self):
         return f"{self.__class__.__name__}({self[0]}, {self[1]})"
 
-    @getter
+    @property
     def x(self):
         return self[0]
 
-    @getter
+    @property
     def y(self):
         return self[1]
 
@@ -124,7 +124,7 @@ class Vec2(tuple):
         return Vec2(self.x - other.x, self.y - other.y)
 
     def __neg__(self):
-        return Vec2(-self.x, -self.h)
+        return Vec2(-self.x, -self.y)
 
     def rotate_left(self):
         return Vec2(-self.y, self.x)
@@ -223,7 +223,7 @@ class EqRelation:
 # Labeled digraphs
 
 class LabeledDigraph:
-    def __init__(self, triples):
+    def __init__(self, triples=()):
         self.data = {}
         for v, label, w in triples:
             self.add_edge(v, label, w)
@@ -245,14 +245,18 @@ class LabeledDigraph:
         visited = {v1: None}
         todo = deque([v1])
         while todo:
-            v = todo.pop()
+            v = todo.popleft()
             for label, w in self.data[v].items():
                 if w not in visited:
                     visited[w] = (label, v)
+                    todo.append(w)
                     if w == v2:
                         break
+            if v2 in visited:
+                break
         else:
             return None
+
         path = []
         back_edge = visited[v2]
         while back_edge is not None:

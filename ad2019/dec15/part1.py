@@ -113,8 +113,8 @@ droid from its starting position to the location of the oxygen system?
 To begin, get your puzzle input.
 """
 
-from lib.advent import LabeledDigraph, Vec2
-from ad2019.intcode.interpreter import IntcodeVM
+from lib.advent import *
+from ad2019.intcode.interpreter import IntcodeVM, parse
 
 START = Vec2(0, 0)
 
@@ -131,16 +131,17 @@ class Robot:
         self.location = START
         self.target = None
         self.known_universe = LabeledDigraph()
-        self.known_unvierse.add_vertex(START)
+        self.known_universe.add_vertex(START)
         self.unexplored = deque([START])
         self.vm.run_some()
-        assert self.vm.status == 'input'
+        assert self.vm.state == 'input'
 
     def go(self, d):
         code = DIRCODES[d]
         print("going", code)
-        result = self.vm.send(code)
-        assert self.vm.status == 'output'
+        self.vm.send(code)
+        assert self.vm.state == 'output'
+        result = self.vm.last_output_value
         if result == 0:
             print("  no go")
         else:
@@ -151,50 +152,49 @@ class Robot:
                     print("  target acquired")
                     self.target = self.location
                 else:
-                    assert seslf.target == self.location
+                    assert self.target == self.location
         self.vm.run_some()
-        asset self.vm.status == 'input'
+        assert self.vm.state == 'input'
         return result
 
     def go_to(self, dest):
         """considered harmful"""
         print(f"moving from {self.location} to {dest}")
-        path = self.known_universe.shortest_path(self.position, dest)
+        path = self.known_universe.shortest_path(self.location, dest)
         if path is None:
             raise ValueError("can't get there from here")
         print(f"({len(path)} hops)")
         for d in path:
             result = self.go(d)
             assert result > 0
-        assert self.position == dest
+        assert self.location == dest
 
     def explore(self):
         here = self.unexplored.popleft()
         self.go_to(here)
         print("exploring", here)
         for d in DIRCODES:
-            if self.go(d):
-                there = self.position
+            if self.go(d) != 0:
+                there = self.location
                 back = self.go(-d)
                 assert back > 0
+                if there not in self.known_universe.data:
+                    self.unexplored.append(there)
                 self.known_universe.add_edge(here, d, there)
                 self.known_universe.add_edge(there, -d, here)
-                if not self.has_visited(there):
-                    self.unexplored.append(there)
 
 def search(program):
-    known_universe = LabeledDigraph()
     robot = Robot(program)
 
     while robot.target is None:
         robot.explore()
 
-    finish = robot.location
+    finish = robot.target
     return len(robot.known_universe.shortest_path(START, finish))
 
 
 def main():
-    print(search(puzzle_input()))
+    print(search(parse(puzzle_input())))
 
 
 if __name__ == '__main__':
