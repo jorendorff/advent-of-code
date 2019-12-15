@@ -97,6 +97,43 @@ class Cycle:
             return self.cycle[(k - len(self.prefix)) % len(self.cycle)]
 
 
+# Euclidean geometry
+
+class Vec2(tuple):
+    def __new__(cls, x, y):
+        return tuple.__new__(cls, x, y)
+
+    def __str__(self):
+        return f"({self[0]}, {self[1]})"
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self[0]}, {self[1]})"
+
+    @getter
+    def x(self):
+        return self[0]
+
+    @getter
+    def y(self):
+        return self[1]
+
+    def __add__(self, other):
+        return Vec2(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other):
+        return Vec2(self.x - other.x, self.y - other.y)
+
+    def __neg__(self):
+        return Vec2(-self.x, -self.h)
+
+    def rotate_left(self):
+        return Vec2(-self.y, self.x)
+
+    def rotate_right(self):
+        return Vec2(self.y, -self.x)
+
+
+
 # Rectangles
 
 def ranges_overlap(r1, r2):
@@ -181,3 +218,52 @@ class EqRelation:
             self.vertices[b] = a
             self.count -= 1
         assert self.count == len(set(self._query(k) for k in list(self.vertices)))
+
+
+# Labeled digraphs
+
+class LabeledDigraph:
+    def __init__(self, triples):
+        self.data = {}
+        for v, label, w in triples:
+            self.add_edge(v, label, w)
+
+    def add_vertex(self, value):
+        if value not in self.data:
+            self.data[value] = {}
+
+    def add_edge(self, v1, label, v2):
+        self.add_vertex(v1)
+        self.add_vertex(v2)
+        self.data[v1][label] = v2
+
+    def shortest_path(self, v1, v2):
+        """Return a list of labels of edges forming any shortest path from v1 to v2
+        or None if no such path exists."""
+        # Breadth-first search; entries in visited are `w: (label, v)` where
+        # `self.data[v][label] == w`.
+        visited = {v1: None}
+        todo = deque([v1])
+        while todo:
+            v = todo.pop()
+            for label, w in self.data[v].items():
+                if w not in visited:
+                    visited[w] = (label, v)
+                    if w == v2:
+                        break
+        else:
+            return None
+        path = []
+        back_edge = visited[v2]
+        while back_edge is not None:
+            label, prev = back_edge
+            path.append(label)
+            back_edge = visited[prev]
+        return path[::-1]
+
+assert LabeledDigraph([(0, 'W', 1)]).shortest_path(0, 1) == ['W']
+assert LabeledDigraph([(0, 'W', 1)]).shortest_path(0, 0) == []
+assert LabeledDigraph([(0, 'W', 1)]).shortest_path(1, 0) is None
+assert LabeledDigraph([(0, 'W', 1), (1, 'S', 2)]).shortest_path(0, 2) == ['W', 'S']
+assert LabeledDigraph([(1, 'S', 2), (0, 'W', 1)]).shortest_path(0, 2) == ['W', 'S']
+
