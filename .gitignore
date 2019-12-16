@@ -3,3 +3,6 @@ __pycache__
 # compiled Dafny files
 *.dll
 *.dll.mdb
+
+# Rust build directories
+target
