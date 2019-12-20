@@ -299,9 +299,14 @@ def bisect(predicate, lo=0, hi=None):
 
 # Diagnostics
 
-def print_grid(p0, p1, f, cmap=None):
+def print_grid(f, p0, p1, cmap=None):
     x0, y0 = p0
     x1, y1 = p1
+
+    if not (x0 < x1 and y0 < y1):
+        print("print_grid: empty range", p0, p1)
+        return
+
     sys.stdout.write(" " * 8)
     for x in range(x0, x1):
         sys.stdout.write(str(x % 10))
