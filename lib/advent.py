@@ -3,6 +3,7 @@
 from collections import deque, defaultdict, namedtuple, Counter
 import itertools
 import math
+import sys
 
 
 # Loading the puzzle input
@@ -270,4 +271,56 @@ assert LabeledDigraph([(0, 'W', 1)]).shortest_path(0, 0) == []
 assert LabeledDigraph([(0, 'W', 1)]).shortest_path(1, 0) is None
 assert LabeledDigraph([(0, 'W', 1), (1, 'S', 2)]).shortest_path(0, 2) == ['W', 'S']
 assert LabeledDigraph([(1, 'S', 2), (0, 'W', 1)]).shortest_path(0, 2) == ['W', 'S']
+
+
+# Algorithms
+
+def bisect(predicate, lo=0, hi=None):
+    """Return the least value i in range(lo, hi+1) for which predicate(i) is true,
+    assuming predicate is monotonic.
+    """
+    assert not predicate(lo)
+
+    if hi is None:
+        hi = 4
+        while not predicate(hi):
+            hi *= 2
+    else:
+        assert predicate(hi)
+
+    while lo + 1 < hi:
+        mid = (lo + hi) // 2
+        if predicate(mid):
+            hi = mid
+        else:
+            lo = mid
+    return hi
+
+
+# Diagnostics
+
+def print_grid(p0, p1, f, cmap=None):
+    x0, y0 = p0
+    x1, y1 = p1
+    sys.stdout.write(" " * 8)
+    for x in range(x0, x1):
+        sys.stdout.write(str(x % 10))
+    print()
+
+    for y in range(y0, y1):
+        sys.stdout.write("%7d " % y)
+        for x in range(x0, x1):
+            result = f(x, y)
+            if cmap is None:
+                if isinstance(result, bool):
+                    c = '#' if result else '.'
+                else:
+                    c = str(result % 10)
+            else:
+                if 0 <= result < len(cmap):
+                    c = cmap[result]
+                else:
+                    c = '?'
+            sys.stdout.write(c)
+        print()
 
