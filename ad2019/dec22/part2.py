@@ -28,87 +28,83 @@ from . import part1
 from math import gcd
 
 
-def compile(size, instructions):
-    offset = 0
-    coeff = 1
-    # every card is moved from offset i to offset `(coeff * i + offset) % size`.
-    for line in instructions.splitlines():
-        line = line.strip()
-        if line == 'deal into new stack':
-            # pos = size - pos - 1
-            # negate
-            coeff = size - coeff
-            offset = size - offset
-            # add -1
-            offset = (offset - 1) % size
-        elif line.startswith('deal with increment '):
-            words = line.split()
-            assert len(words) == 4
-            incr = int(words[-1])
-            # pos = (pos * incr) % size
-            coeff = (coeff * incr) % size
-            offset = (offset * incr) % size
-        elif line.startswith('cut '):
-            words = line.split()
-            assert len(words) == 2
-            amt = int(words[-1])
-            # pos = (pos - amt) % size
-            offset = (offset - amt) % size
-        else:
-            raise ValueError("unexpected instruction: " + line)
-    return (offset, coeff)
+class Shuffle:
+    """Certain permutations of finite sets of integers."""
+    def __init__(self, a, b, n):
+        """Return the Shuffle that maps every position x to ax+b (mod n)."""
+        self.a = a
+        self.b = b
+        self.n = n
+
+    def __eq__(self, other):
+        return (self.a, self.b, self.n) == (other.a, other.b, other.n)
+
+    @classmethod
+    def identity(cls, n):
+        return cls(1, 0, n)
+
+    @classmethod
+    def cut(cls, k, n):
+        return cls(1, -k % n, n)
+
+    @classmethod
+    def deal(cls, incr, n):
+        return cls(incr, 0, n)
+
+    @classmethod
+    def reverse(cls, n):
+        return cls(-1 % n, -1 % n, n)
 
 
-def shuf(size, instructions, start):
-    pos = start
-    for line in instructions.splitlines():
-        line = line.strip()
-        if line == 'deal into new stack':
-            pos = size - pos - 1
-        elif line.startswith('deal with increment '):
-            words = line.split()
-            assert len(words) == 4
-            incr = int(words[-1])
-            pos = (pos * incr) % size
-        elif line.startswith('cut '):
-            words = line.split()
-            assert len(words) == 2
-            amt = int(words[-1])
-            # this can be positive or negative
-            pos = (pos - amt) % size
-        else:
-            raise ValueError("unexpected instruction: " + line)
-    return pos
+    def __call__(self, x):
+        """Return the index where this shuffle leaves a card that starts at position x."""
+        if not 0 <= x < self.n:
+            raise ValueError("out of range")
+        return (self.a * x + self.b) % self.n
 
+    def __add__(self, other):
+        """Compose two shuffles."""
+        assert self.n == other.n
+        n = self.n
 
-SIZE = 119315717514047
+        # We're doing this shuffle first, then the other one.
+        # x
+        # ---self--->
+        # self.a * x + self.b
+        # ---other--->
+        # other.a * (self.a * x + self.b) + other.b
 
-REPEAT_COUNT = 101741582076661
+        return Shuffle((other.a * self.a) % n,
+                       (other.a * self.b + other.b) % n,
+                       n)
 
-TARGET_POS = 2020
+    def __neg__(self):
+        """Compute the inverse of this shuffle."""
+        cls = self.__class__
+        a, b, n = self.a, self.b, self.n
+        assert self == cls(a, 0, n) + cls(1, b, n)
+        return cls(1, n - b, n) + cls(modular_inverse(a, n), 0, n)
 
+    def __mul__(self, count):
+        n = self.n
+        cls = self.__class__
+        if isinstance(count, int):
+            if count < 0:
+                return -self * -count
+            elif count == 0:
+                return cls.identity(n)
+            elif count == 1:
+                return self
+            elif count == 2:
+                return self + self
+            else:
+                return (self * (count >> 1)) * 2 + self * (count & 1)
 
-def slow_solve(size, instructions, target, repeat_count):
-    for start in range(size):
-        pos = start
-        for _ in range(repeat_count):
-            pos = shuf(size, instructions, pos)
-        if pos == target:
-            return start
-    assert False, "should not get here"
-
-def compose(f, g, size):
-    c0, c1 = f
-    d0, d1 = g
-    # (f . g) x = f (g x)
-    # = f (d1 * x + d0)
-    # = (d1 * x + d0) * c1 + c0
-    # = (c1 * d1) * x + (c1 * d0 + c0)
-    return ((c1 * d0 + c0) % size, (c1 * d1) % size)
+    __rmul__ = __mul__
 
 
 def modular_inverse(a, m):
-    """Find b in range(m) such that a * b is a multiple of m.
+    """Find b in range(m) such that a * b == 1 modulo m.
     Blatant ripoff of https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm
     """
     t = 0
@@ -126,40 +122,43 @@ def modular_inverse(a, m):
     return t
 
 
-
-def exp(f, n, size):
-    if n == 0:
-        return (0, 1)
-    elif n == 1:
-        return f
-    elif n & 1:
-        return compose(f, exp(f, n - 1, size), size)
-    else:
-        assert n > 1
-        half = exp(f, n >> 1, size)
-        return compose(half, half, size)
-
-def inverse(f, size):
-    c0, c1 = f
-    # f is compose((+ c0), (* c1)).
-    assert f == compose((c0, 1), (0, c1), size)
-    # The inverse is compose((* modular_inverse(c1)), (- c0)).
-    return compose((0, modular_inverse(c1, size)), (size - c0, 1), size)
+def parse_steps(n, instructions):
+    for line in instructions.splitlines():
+        line = line.strip()
+        if line == 'deal into new stack':
+            yield Shuffle.reverse(n)
+        elif line.startswith('deal with increment '):
+            words = line.split()
+            assert len(words) == 4
+            yield Shuffle.deal(int(words[-1]), n)
+        elif line.startswith('cut '):
+            words = line.split()
+            assert len(words) == 2
+            yield Shuffle.cut(int(words[-1]), n)
+        else:
+            raise ValueError("unexpected instruction: " + line)
 
 
-def solve(size, instructions, start, repeat_count):
-    f = compile(size, instructions)
-    fn = inverse(exp(f, repeat_count, size), size)
-    c0, c1 = fn
-    return (c1 * start + c0) % size
+SIZE = 119315717514047
+
+REPEAT_COUNT = 101741582076661
+
+TARGET_POS = 2020
+
+
+def solve(size, instructions, target, repeat_count):
+    steps = parse_steps(size, instructions)
+    f = sum(steps, Shuffle.identity(size))
+    unshuffle_many = f * -repeat_count
+    return unshuffle_many(target)
 
 
 def test():
-    for c0 in range(5):
-        for c1 in range(1, 5):
-            f = (c0, c1)
-            finv = inverse(f, 5)
-            assert compose(f, finv, 5) == (0, 1)
+    for a in range(1, 5):
+        for b in range(0, 5):
+            f = Shuffle(a, b, 5)
+            finv = f * -1
+            assert f + finv == Shuffle(1, 0, 5)
 
     for test in part1.TESTS.split("\n\n"):
         instructions, result = test.strip().rsplit('\n', 1)
@@ -168,26 +167,12 @@ def test():
         expected = [int(n) for n in result[8:].strip().split()]
         size = len(expected)
 
-        # Assert results are as expected for repeat_count==1
-        actual = [slow_solve(size, instructions, i, 1) for i in range(size)]
-        if actual != expected:
-            raise ValueError("Test failed:\n"
-                             + "actual: " + repr(actual) + "\n"
-                             + "expected: " + repr(expected) + "\n")
-
-        # Assert faster solver works for repeat_count == 1
+        # Assert solver works for repeat_count == 1
         actual = [solve(size, instructions, i, 1) for i in range(size)]
         if actual != expected:
             raise ValueError("Test failed:\n"
                              + "actual: " + repr(actual) + "\n"
                              + "expected: " + repr(expected) + "\n")
-
-        # Assert solvers agree for larger repeat_count
-        for repeat_count in (1, 2, 3, 4, 5, 1517):
-            for i in range(10):
-                slow_answer = slow_solve(size, instructions, i, repeat_count)
-                fast_answer = solve(size, instructions, i, repeat_count)
-                assert slow_answer == fast_answer
 
 
 def main():
