@@ -190,17 +190,23 @@ def parse_maze(text):
     edges = defaultdict(list)
 
     # track walking edges
-    for label, pts in labeled_points.items():
-        for i, p in enumerate(pts):
-            for q in pts[i + 1:]:
-                dist = len(graph.shortest_path(p, q))
-                edges[p].append((dist, q, 0))
-                edges[q].append((dist, p, 0))
+    all_interesting_points = [aa, zz] + [
+        p
+        for point_pair in labeled_points.values()
+        for p in point_pair
+    ]
+    for i, p in enumerate(all_interesting_points):
+        for q in all_interesting_points[i + 1:]:
+            path = graph.shortest_path(p, q)
+            if path is not None:
+                dist = len(path)
+                edges[p].append((dist, q, 0, 'walk'))
+                edges[q].append((dist, p, 0, 'walk'))
 
     # track portal edges
-    for key, pts in labeled_points.items():
+    for label, pts in labeled_points.items():
         if len(pts) != 2:
-            raise ValueError("key {} is next to these points: {}".format(key, repr(pts))
+            raise ValueError("label {} is next to these points: {}".format(label, repr(pts))
                              + "\n(expected each tag to label exactly 2 points)")
         p, q = pts
         p_out = is_on_outer_edge(p)
@@ -209,8 +215,8 @@ def parse_maze(text):
             raise ValueError("unsupported: portals going to the same level")
         p2q_depth = int(q_out) - int(p_out)  # +1 if p is inner and q is outer: portaling from p to q goes deeper
         assert p2q_depth in (-1, +1)
-        edges[p].append((1, q, p2q_depth))
-        edges[q].append((1, p, -p2q_depth))
+        edges[p].append((1, q, p2q_depth, label))
+        edges[q].append((1, p, -p2q_depth, label))
 
     return edges, aa, zz
 
@@ -223,17 +229,16 @@ def solve(text):
 
     def ways(p):
         x, y, z = p
-        for dist, (x1, y1), dz in edges[x, y]:
-            q = x1, y1, z + dz
-            yield None, dist, q
+        for dist, (x1, y1), dz, label in edges[x, y]:
+            if z + dz >= 0:  # don't go up out of toplevel
+                q = x1, y1, z + dz
+                yield label, dist, q
 
-    zebra_path = shortest_weighted_path(start, lambda q: q == finish, ways)
-    moves = zebra_path[1::2]
-    return len(moves)
+    tw, path = shortest_weighted_path([start], lambda q: q == finish, ways)
+    return tw
 
 
 assert solve(part1.X1) == 26
-
 
 X3 = """\
              Z L X W       C                 
