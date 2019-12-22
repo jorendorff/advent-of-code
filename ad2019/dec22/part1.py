@@ -23,7 +23,6 @@ def shuf(size, instructions):
             for i, card in enumerate(deck):
                 new_deck[i * incr % size] = card
             deck[:] = new_deck
-
         elif line.startswith('cut '):
             assert len(words) == 2
             amt = int(words[-1])
@@ -66,7 +65,7 @@ Result: 9 2 5 8 1 4 7 0 3 6
 
 def test():
     for test in TESTS.split("\n\n"):
-        instructions, result = test.rsplit('\n', 1)
+        instructions, result = test.strip().rsplit('\n', 1)
         assert result.startswith('Result: ')
         expected = [int(n) for n in result[8:].strip().split()]
         actual = shuf(10, instructions)
