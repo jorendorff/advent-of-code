@@ -4,14 +4,16 @@
 
 from lib.advent import *
 from ad2019.intcode.interpreter import IntcodeVM, parse
+import threading
 
 
-class Computer:
+class Computer(threading.Thread):
     def __init__(self, program, network, addr):
+        threading.Thread.__init__(self)
         self.addr = addr
         self.vm = IntcodeVM(program, input=self.input, output=self.output)
         self.network = network
-        self.queue = deque()
+        self.queue = deque([addr])
         self.outgoing = []
 
     def receive(self, x, y):
@@ -20,7 +22,7 @@ class Computer:
 
     def input(self):
         if self.queue:
-            return self.popleft()
+            return self.queue.popleft()
         return -1
 
     def output(self, value):
@@ -28,7 +30,7 @@ class Computer:
         if len(self.outgoing) == 3:
             addr, x, y = self.outgoing
             if 0 <= addr < len(self.network):
-                network[addr].receive(x, y)
+                self.network[addr].receive(x, y)
             elif addr == 255:
                 print(f"\n\n\nPACKET SENT TO 255: x={x} y={y} ***\n\n\n")
             else:
@@ -37,12 +39,8 @@ class Computer:
 
     def run(self):
         self.vm.run_some()
-        print(f "computer {id} halted")
+        print(f"computer {id} halted")
         assert self.vm.state == "halt"
-
-    def boot(self):
-        threading.Thread(self.run).start()
-
 
 
 COMPUTER_COUNT = 50
@@ -56,7 +54,7 @@ def main():
         network.append(Computer(program, network, addr))
 
     for computer in network:
-        computer.launch()
+        computer.start()
 
 
 if __name__ == '__main__':
