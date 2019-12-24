@@ -9,6 +9,14 @@ WIDTH = 5
 HEIGHT = 5
 
 
+def dump_bitset(s):
+    for y in range(HEIGHT):
+        for x in range(WIDTH):
+            sys.stdout.write("#" if s & (1 << (y * WIDTH + x)) else ".")
+        print()
+    print()
+
+
 def point_to_bit(p):
     x, y = p
     return 1 << (y * WIDTH + x)
@@ -21,6 +29,7 @@ assert point_to_bit((1, 4)) == 2097152
 
 def points_to_bits(points):
     return sum(point_to_bit(p) for p in points)
+
 
 # bitset of all points
 MASK = (1 << (WIDTH * HEIGHT)) - 1
@@ -38,10 +47,10 @@ BIT_CLASSES = [BIT_CLASS_0 << k for k in range(N_BIT_CLASSES)]
 
 def step(s):
     # bitset of all points that have a bug to the (left/right/up/down)
-    x0 = (s & LEFT_MASK) >> 1
-    x1 = (s & RIGHT_MASK) << 1
-    y0 = (s & UP_MASK) >> WIDTH
-    y1 = (s & DOWN_MASK) << WIDTH
+    x0 = (s & LEFT_MASK) << 1
+    x1 = (s & RIGHT_MASK) >> 1
+    y0 = (s & UP_MASK) << WIDTH
+    y1 = (s & DOWN_MASK) >> WIDTH
 
     cx0 = ~x0 & ~x1
     cx1 = x0 ^ x1
@@ -53,7 +62,7 @@ def step(s):
     c1 = (cx0 & cy1) | (cx1 & cy0)
     c2 = (cx0 & cy2) | (cx1 & cy1) | (cx2 & cy0)
 
-    survivors = s & ~c1
+    survivors = s & c1
     infested = ~s & (c1 | c2)
 
     return survivors | infested
@@ -73,10 +82,17 @@ def parse(grid):
                 raise ValueError(f"what is this: {c!r}")
 
 
+def rep(start):
+    x = start
+    while True:
+        yield x
+        x = step(x)
+
+
 def solve(grid):
     grid_bits = points_to_bits(parse(grid))
-    cy = Cycle(step, grid_bits)
-    print(cy.cycle[0])
+    cy = Cycle(rep(grid_bits))
+    return cy.cycle[0]
 
 
 EXAMPLE = """\
