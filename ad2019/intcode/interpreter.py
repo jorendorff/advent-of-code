@@ -260,3 +260,42 @@ def load(filename="puzzle-input.txt"):
 
 def parse(text):
     return [int(word.strip()) for word in text.split(',')]
+
+
+def main(filename):
+    """Load a program from `filename` and run it on an ASCII computer interactively."""
+    program = load(filename)
+
+    all_input = ""
+
+    input_buffer = []
+    def buffered_input():
+        nonlocal all_input
+        if len(input_buffer) == 0:
+            line = input()
+            all_input += line + "\n"
+            input_buffer[:] = [ord(ch) for ch in line] + [10]
+        return input_buffer.pop(0)
+
+    def console_output(i):
+        if i > 127:
+            print()
+            print(i)
+        else:
+            sys.stdout.write(chr(i))
+            sys.stdout.flush()
+
+    vm = IntcodeVM(program, input=buffered_input, output=console_output)
+    try:
+        vm.run_some()
+    except KeyboardInterrupt:
+        pass
+    print("----")
+    print("Your input:")
+    print(all_input)
+
+
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) == 2:
+        main(sys.argv[1])
