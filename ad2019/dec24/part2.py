@@ -168,6 +168,7 @@ Starting with your scan, how many bugs are present after 200 minutes?
 
 from lib.advent import *
 from functools import lru_cache
+import collections
 
 
 WIDTH = 5
@@ -175,6 +176,20 @@ HEIGHT = 5
 
 MID_X = WIDTH // 2
 MID_Y = HEIGHT // 2
+
+
+def dump_bugs(bugs):
+    min_z = min(z for x, y, z in bugs)
+    max_z = max(z for x, y, z in bugs)
+    for z in range(min_z, max_z + 1):
+        print(f"Depth {z}:")
+        for y in range(HEIGHT):
+            for x in range(WIDTH):
+                print('#' if (x, y, z) in bugs
+                      else '?' if (x, y) == (MID_X, MID_Y)
+                      else '.', end='')
+            print()
+        print()
 
 def parse(grid):
     lines = grid.splitlines()
@@ -215,6 +230,10 @@ def neighbors(point):
     if y < HEIGHT - 1:
         results.add((x, y + 1, z))
 
+    bad_point = (MID_X, MID_Y, z)
+    if bad_point in results:
+        results.remove(bad_point)
+
     # inner neighbors
     if x == MID_X:
         if y == MID_Y - 1:
@@ -234,17 +253,29 @@ def neighbors(point):
     return results
 
 
+assert len(neighbors((3, 3, 0))) == 4
+assert len(neighbors((1, 1, 1))) == 4
+assert len(neighbors((3, 0, 1))) == 4
+assert len(neighbors((4, 0, 1))) == 4
+print(neighbors((3, 2, 0)))
+assert len(neighbors((3, 2, 0))) == 8
+assert len(neighbors((3, 2, 1))) == 8
+
+
+
 def step(bugs):
     c = collections.Counter(n for p in bugs for n in neighbors(p))
     return set(p
                for p, count in c.items()
-               if count == 1 or (count == 2 and p in bugs))
+               if count == 1 or (count == 2 and p not in bugs))
 
 
 def count_bugs_after(grid, steps):
     bugs = set(parse(grid))
+    dump_bugs(bugs)
     for _ in range(steps):
         bugs = step(bugs)
+        dump_bugs(bugs)
     return len(bugs)
 
 
