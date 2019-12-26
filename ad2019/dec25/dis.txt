@@ -1,0 +1,1371 @@
+The result of disassembling puzzle-input.txt, partially manually
+decompiled.
+
+// at 0
+fn main() {
+    f1424(&RM_HUL);
+    loop {
+        print!("\nCommand?\n");
+        call f1984();
+    }
+}
+
+main:
+     0  arb 4811
+     2  add 3124, 0 -> rel[1]
+     6  add 0, 13 -> rel[0]
+    10  jump-if-false 0, 1424
+<   13  mul 166, 1 -> rel[1]
+    17  add 24, 0 -> rel[0]
+    21  jump-if-false 0, 1234  ;; out_phrase
+    24  mul 31, 1 -> rel[0]
+    28  jump-if-false 0, 1984
+    31  jump-if-true 1, 13
+
+    ;; strings used by the rest of the program
+    34  .adstr "\n\n\n== "
+    41  .adstr " ==\n"
+    46  .adstr "\n\nDoors here lead:\n"
+    66  .int str_north
+    67  .int str_east
+    68  .int str_south
+    69  .int str_west
+str_north:
+    70  .adstr "north"
+str_east:
+    76  .adstr "east"
+str_south:
+    81  .adstr "south"
+str_west:
+    87  .adstr "west"
+    92  .adstr "\nItems here:\n"
+   106  .adstr "\nItems in your inventory:\n"
+   133  .adstr "\nYou aren't carrying any items.\n"
+str_prompt:
+   166  .adstr "\nCommand?\n"
+   177  .adstr "\nUnrecognized command.\n"
+   201  .adstr "\nYou can't go that way.\n"
+   226  .adstr "\nYou don't see that item here.\n"
+   258  .adstr "\nYou take the "
+   273  .adstr "\nYou don't have that item.\n"
+   301  .adstr "\nYou drop the "
+str_stuck:
+   316  .adstr "\nThe giant electromagnet is stuck to you.  You can't move!!\n"
+   377  .adstr "\nYou take the infinite loop.\n"
+   407  .adstr "\nThe molten lava is way too hot! You melt!\n\n"
+   452  .adstr "\nIt is suddenly completely dark! You are eaten by a Grue!\n\n"
+   512  .adstr "\nYou're launched into space! Bye!\n\n"
+   548  .adstr "\nA loud, robotic voice says \"Alert! Droids on this ship are heavier than the detected value!\" and you are ejected back to the checkpoint.\n"
+   687  .adstr "\nA loud, robotic voice says \"Alert! Droids on this ship are lighter than the detected value!\" and you are ejected back to the checkpoint.\n"
+   826  .adstr "A loud, robotic voice says \"Analysis complete! You may proceed.\" and you enter the cockpit.\nSanta notices your small droid, looks puzzled for a moment, realizes what has happened, and radios your ship directly.\n\"Oh, hello! You should be able to get in by typing "
+  1090  .adstr "\" on the keypad at the main airlock.\n"
+
+  1128  .int 0
+
+static mut STUCK: bool = false;
+
+g_stuck:
+  1129  .int 0
+
+// at 1130
+fn for_each_with_index<T>(
+    items: &[T],  // pointer in rel[1], length in rel[2]
+    item_size: usize,
+    f: fn(&T, usize),
+) {
+    assert_eq!(item_size, mem::size_of::<T>());
+    for i in 0..items.length {
+        f(&items[i], i);
+    }
+}
+
+  1130  arb 7
+  1132  add 0, 0 -> rel[-2]
+< 1136  eq rel[-2], rel[-5] -> rel[-1]
+  1140  jump-if-true rel[-1], 1169
+  1143  mul rel[-2], rel[-4] -> rel[1]
+  1147  add rel[1], rel[-6] -> rel[1]
+  1151  mul 1, rel[-2] -> rel[2]
+  1155  add 0, 1162 -> rel[0]
+  1159  jump-if-true 1, rel[-3]
+  1162  add rel[-2], 1 -> rel[-2]
+  1166  jump-if-true 1, 1136
+> 1169  arb -7
+  1171  jump-if-false 0, rel[0]
+
+struct Array<T> {
+    length: Int,
+    data: [T],
+}
+
+// at 1174
+// Apply `f` to each element of a given array.
+// The other two arguments are the index of the value within the array,
+// and the array length.
+fn for_each(
+    mut a1: &Array<Int>,
+    f: fn (Int, Int, Int),
+) {
+    let n = a1.length;
+    for i in 0..n {
+        call f(a1.data[i], i, n);
+    }
+}
+
+  1174  arb 6
+  1176  mul rel[-5], 1 -> [1182]
+  1180  mul 1, [0] -> rel[-2]
+  1184  mul 0, 1 -> rel[-3]
+  1188  add rel[-5], 1 -> rel[-5]
+< 1192  eq rel[-3], rel[-2] -> rel[-1]
+  1196  jump-if-true rel[-1], 1229
+  1199  add rel[-5], rel[-3] -> [1205]
+  1203  add 0, [0] -> rel[1]
+  1207  add 0, rel[-3] -> rel[2]
+  1211  mul 1, rel[-2] -> rel[3]
+  1215  mul 1, 1222 -> rel[0]
+  1219  jump-if-false 0, rel[-4]
+  1222  add rel[-3], 1 -> rel[-3]
+  1226  jump-if-true 1, 1192
+> 1229  arb -6
+  1231  jump-if-false 0, rel[0]
+
+// at 1234
+fn out_phrase(a1: &Array<Int>) {
+    call for_each(a1, out_sum);
+}
+
+  1234  arb 2
+  1236  add rel[-1], 0 -> rel[1]
+  1240  mul 1, 1256 -> rel[2]  ;; out_sum
+  1244  add 1251, 0 -> rel[0]
+  1248  jump-if-true 1, 1174
+> 1251  arb -2
+  1253  jump-if-true 1, rel[0]
+
+// at 1256
+fn out_sum(a1: Int, a2: Int, a3: Int) {
+    r1 = a1 + a2 + a3;
+    print!("{}", unsafe { r1 as char });
+}
+
+  1256  arb 5
+  1258  add rel[-4], rel[-3] -> rel[-1]
+  1262  add rel[-2], rel[-1] -> rel[-1]
+  1266  output rel[-1]
+  1268  arb -5
+  1270  jump-if-false 0, rel[0]
+
+// at 1273
+unsafe fn (a1: *const Int, a2: *const Int) {
+    if (*a1 != 0) {
+        print!("- ");
+        out_phrase(*(r2.offset(66) as *const &Array<Int>) as &Array<Int>);
+        println!();
+    }
+}
+
+  1273  arb 3
+  1275  mul 1, rel[-2] -> [1280]
+  1279  jump-if-false [0], 1303
+  1282  output 45
+  1284  output 32
+  1286  add rel[-1], 66 -> [1292]
+  1290  mul 1, [0] -> rel[1]
+  1294  mul 1, 1301 -> rel[0]
+  1298  jump-if-false 0, 1234 ;; out_phrase
+  1301  output 10
+> 1303  arb -3
+  1305  jump-if-false 0, rel[0]
+
+  1308  .int 0
+  1309  .int 0
+
+  1310  arb 2
+  1312  mul 1, rel[-1] -> [1309]
+  1316  mul 0, 1 -> [1308]
+  1320  add 4601, 0 -> rel[1]
+  1324  add 0, 13 -> rel[2]
+  1328  add 4, 0 -> rel[3]
+  1332  mul 1353, 1 -> rel[4]
+  1336  add 1343, 0 -> rel[0]
+  1340  jump-if-false 0, 1130
+  1343  add [1308], 0 -> rel[-1]
+  1347  arb -2
+  1349  jump-if-true 1, rel[0]
+  1352  .int 85
+
+  1353  arb 3
+  1355  add 0, rel[-2] -> [1360]
+  1359  eq [0], [1309] -> rel[-1]
+  1363  jump-if-false rel[-1], 1419
+  1366  jump-if-true [1308], 1398
+  1369  add 0, 1 -> [1308]
+  1373  eq [1309], -1 -> rel[-1]
+  1377  jump-if-false rel[-1], 1387
+  1380  add 106, 0 -> rel[1]
+  1384  jump-if-false 0, 1391
+  1387  mul 92, 1 -> rel[1]
+  1391  mul 1, 1398 -> rel[0]
+  1395  jump-if-true 1, 1234  ;; out_phrase
+  1398  output 45
+  1400  output 32
+  1402  add rel[-2], 1 -> [1407]
+  1406  add [0], 0 -> rel[1]
+  1410  add 0, 1417 -> rel[0]
+  1414  jump-if-true 1, 1234  ;; out_phrase
+  1417  output 10
+  1419  arb -3
+  1421  jump-if-true 1, rel[0]
+
+> 1424  arb 3
+  1426  mul 1, rel[-2] -> [1128]
+  1430  add 34, 0 -> rel[1]
+  1434  add 1441, 0 -> rel[0]
+  1438  jump-if-false 0, 1234  ;; out_phrase
+  1441  add [1128], 0 -> [1447]
+  1445  mul 1, [0] -> rel[1]
+  1449  add 0, 1456 -> rel[0]
+  1453  jump-if-true 1, 1234  ;; out_phrase
+  1456  mul 1, 41 -> rel[1]
+  1460  add 1467, 0 -> rel[0]
+  1464  jump-if-false 0, 1234  ;; out_phrase
+  1467  add [1128], 1 -> [1472]
+  1471  mul [0], 1 -> rel[1]
+  1475  mul 1, 1482 -> rel[0]
+  1479  jump-if-true 1, 1234  ;; out_phrase
+  1482  add 0, 46 -> rel[1]
+  1486  mul 1493, 1 -> rel[0]
+  1490  jump-if-true 1, 1234  ;; out_phrase
+  1493  add [1128], 3 -> rel[1]
+  1497  mul 1, 4 -> rel[2]
+  1501  mul 1, 1 -> rel[3]
+  1505  mul 1, 1273 -> rel[4]
+  1509  mul 1, 1516 -> rel[0]
+  1513  jump-if-false 0, 1130
+  1516  mul [1128], 1 -> rel[1]
+  1520  add 0, 1527 -> rel[0]
+  1524  jump-if-true 1, 1310
+  1527  add [1128], 2 -> [1532]
+  1531  add [0], 0 -> rel[-1]
+  1535  jump-if-false rel[-1], 1545
+  1538  add 1545, 0 -> rel[0]
+  1542  jump-if-false 0, rel[-1]
+  1545  arb -3
+  1547  jump-if-false 0, rel[0]
+
+  1550  arb 0
+  1552  .int 99
+
+fn analysis() {
+    g1550 = 0;
+    for_each_with_index(&OBJECTS, 4, tally_weight_of_carried_items);
+
+    g1551 = g2486 * g1352;
+    g1552 = 0;
+    for_each_bit(g1550, 33, f1702);
+    if g1552 < 0 {
+        goto 1630;
+        print!("\nA loud, robotic voice says \"Alert! Droids on this ship are heavier than the detected value!\" and you are ejected back to the checkpoint.\n");
+    } else if 0 < g1552 {
+        print!("\nA loud, robotic voice says \"Alert! Droids on this ship are lighter than the detected value!\" and you are ejected back to the checkpoint.\n");
+    } else {
+        victory();
+    }
+}
+
+  1553  arb 2
+  1555  add 0, 0 -> [1550]
+  1559  add 0, 4601 -> rel[1]
+  1563  mul 13, 1 -> rel[2]
+  1567  add 4, 0 -> rel[3]
+  1571  add 1664, 0 -> rel[4]
+  1575  mul 1, 1582 -> rel[0]
+  1579  jump-if-false 0, 1130
+  1582  mul [2486], [1352] -> [1551]
+  1586  add 0, 0 -> [1552]
+  1590  mul [1550], 1 -> rel[1]
+  1594  add 33, 0 -> rel[2]
+  1598  add 0, 1702 -> rel[3]
+  1602  mul 1609, 1 -> rel[0]
+  1606  jump-if-false 0, 2722  ;; for_each_bit
+  1609  lt [1552], 0 -> rel[-1]
+  1613  jump-if-true rel[-1], 1630
+  1616  lt 0, [1552] -> rel[-1]
+  1620  jump-if-true rel[-1], 1637
+  1623  mul 1, 1630 -> rel[0]
+  1627  jump-if-false 0, 1752  ;; victory
+> 1630  mul 548, 1 -> rel[1]
+  1634  jump-if-true 1, 1641
+  1637  mul 687, 1 -> rel[1]
+> 1641  add 1648, 0 -> rel[0]
+  1645  jump-if-false 0, 1234  ;; out_phrase
+  1648  add 0, 4457 -> rel[1]
+  1652  add 1659, 0 -> rel[0]
+  1656  jump-if-false 0, 1424
+  1659  arb -2
+  1661  jump-if-false 0, rel[0]
+
+// at 1664
+fn tally_weight_of_carried_items(item: &Item, index: usize) {
+    if item.location == Location::Carried {
+        let weight = item.encoded_weight - 27 - index;
+        g1550 += weight;
+    }
+}
+
+  1664  arb 4
+  1666  mul rel[-2], -1 -> rel[-2]
+  1670  add 0, rel[-3] -> [1675]
+  1674  eq [0], -1 -> rel[-1]
+  1678  jump-if-false rel[-1], 1697
+  1681  add rel[-3], 2 -> [1687]
+  1685  add -27, [0] -> rel[-3]
+  1689  add rel[-3], rel[-2] -> rel[-3]
+  1693  add [1550], rel[-3] -> [1550]
+> 1697  arb -4
+  1699  jump-if-true 1, rel[0]
+
+// at 1702
+fn f1702(carrying: bool, i: Int) {
+    if g1552 == 0 {
+        r2 = ga1901[i];
+        if !carrying {
+            if r2 >= g1551 {
+                g1552 = -1;
+            }
+        } else {
+            if g1551 >= r2 {
+                g1552 = 1;
+            }
+        }
+    }
+}
+
+  1702  arb 5
+  1704  eq [1552], 0 -> rel[-1]
+  1708  jump-if-false rel[-1], 1747
+  1711  add rel[-3], 1901 -> [1716]
+  1715  add [0], 0 -> rel[-2]
+  1719  jump-if-true rel[-4], 1736
+  1722  lt rel[-2], [1551] -> rel[-1]
+  1726  jump-if-true rel[-1], 1747
+  1729  add -1, 0 -> [1552]
+  1733  jump-if-true 1, 1747
+> 1736  lt [1551], rel[-2] -> rel[-1]
+  1740  jump-if-true rel[-1], 1747
+  1743  add 1, 0 -> [1552]
+> 1747  arb -5
+  1749  jump-if-true 1, rel[0]
+
+// at 1752
+fn victory() {
+    print!("A loud, robotic voice says \"Analysis complete! You may proceed.\" and you enter the cockpit.\nSanta notices your small droid, looks puzzled for a moment, realizes what has happened, and radios your ship directly.\n\"Oh, hello! You should be able to get in by typing ");
+    out_int(g1550);
+    print!(" on the keypad at the main airlock.\"\n");
+    process::exit(0);
+}
+
+  1752  arb 1
+  1754  add 0, 826 -> rel[1]
+  1758  mul 1765, 1 -> rel[0]
+  1762  jump-if-true 1, 1234  ;; out_phrase
+  1765  add [1550], 0 -> rel[1]
+  1769  add 0, 1776 -> rel[0]
+  1773  jump-if-true 1, 2863  ;; out_int
+  1776  add 0, 1090 -> rel[1]
+  1780  mul 1, 1787 -> rel[0]
+  1784  jump-if-false 0, 1234  ;; out_phrase
+  1787  halt
+  1788  jump-if-false 0, 1787
+  1791  arb -1
+  1793  jump-if-false 0, rel[0]
+
+fn on_taking_escape_pod() {
+    print!("\nYou're launched into space! Bye!\n\n");
+    process::exit(1);
+}
+
+  1796  arb 1
+  1798  add 512, 0 -> rel[1]
+  1802  add 0, 1809 -> rel[0]
+  1806  jump-if-false 0, 1234  ;; out_phrase
+  1809  halt
+  1810  jump-if-false 0, 1809
+  1813  arb -1
+  1815  jump-if-false 0, rel[0]
+
+// at 1818
+fn on_taking_giant_electromagnet() {
+    unsafe { STUCK = true; }
+}
+
+  1818  arb 1
+  1820  mul 1, 1 -> [1129]
+  1824  arb -1
+  1826  jump-if-false 0, rel[0]
+
+fn on_taking_infinite_loop() {
+    loop {
+        print!("\nYou take the infinite loop.\n");
+    }
+}
+
+  1829  arb 1
+  1831  add 377, 0 -> rel[1]
+  1835  add 0, 1842 -> rel[0]
+  1839  jump-if-true 1, 1234  ;; out_phrase
+  1842  jump-if-false 0, 1831
+  1845  arb -1
+  1847  jump-if-true 1, rel[0]
+
+// 1850
+fn on_taking_molten_lava() {
+    print!("\nThe molten lava is way too hot! You melt!\n\n");
+    process::exit(1);
+}
+
+// The intcode here is strange. the instruction at 1864 I don't quite get;
+// and the function gets an epilogue and a "return" instruction even
+// though it's unreachable.
+
+  1850  arb 1
+  1852  add 0, 407 -> rel[1]
+  1856  add 0, 1863 -> rel[0]
+  1860  jump-if-false 0, 1234  ;; out_phrase
+< 1863  halt
+  1864  jump-if-false 0, 1863
+  1867  arb -1
+  1869  jump-if-false 0, rel[0]
+
+// at 1872
+fn on_taking_photons() {
+    print!("\nIt is suddenly completely dark! You are eaten by a Grue!\n\n");
+    process::exit(1);
+}
+
+  1872  arb 1
+  1874  add 452, 0 -> rel[1]
+  1878  add 0, 1885 -> rel[0]
+  1882  jump-if-false 0, 1234  ;; out_phrase
+  1885  halt
+  1886  jump-if-false 0, 1885
+  1889  arb -1
+  1891  jump-if-false 0, rel[0]
+
+  1894  .int 1941
+  1895  .int 1947
+  1896  .int 1953
+  1897  .int 1958
+  1898  .int 1965
+  1899  .int 1972
+  1900  .int 1978
+
+  1901  .int 4914
+  1902  .int 5079
+  1903  .int 5161
+  1904  .int 5112
+  1905  .int 5374
+  1906  .int 5315
+  1907  .int 5121
+  1908  .int 4944
+  1909  .int 5464
+  1910  .int 5331
+  1911  .int 4939
+  1912  .int 4752
+  1913  .int 5423
+  1914  .int 4875
+  1915  .int 4966
+  1916  .int 4835
+  1917  .int 5049
+  1918  .int 5360
+  1919  .int 5209
+  1920  .int 5290
+  ;; oops, these are not really instructions
+  1921  mul ???mode8(4942), ???mode4(5478) -> [4940]
+  1925  jump-if-true rel[4784], ???mode5(4786)
+  1928  .int 5442
+  1929  .int 5228
+  1930  .int 5053
+  1931  .int 4853
+  1932  .int 5462
+  1933  .int 5027
+
+;; this is used as some kind of dispatch table, see 2040
+  1934  .int 2281
+  1935  .int 2468
+  1936  .int 2418
+  1937  .int 2450
+  1938  .int 2487
+  1939  .int 2125
+  1940  jump-if-true ???mode5(5), rel[95]
+  1943  eq 104, [104] -> [23]
+  1947  jump-if-true [96], [91]
+  1950  eq 108, [1] -> [4]
+  1954  add 105, [112] -> [3]
+  1958  jump-if-false [104], [104]
+  1961  jump-if-false 107, [94]
+  1964  ???-1
+  1965  jump-if-false [109], [104]
+  1968  arb 107
+  1970  ???94
+  1971  ???-1
+  1972  jump-if-true [111], [91]
+  1975  ???100
+  1976  ???93
+  1977  ???23
+  1978  jump-if-true [114], [95]
+  1981  eq 108, [1] -> [109]
+  1985  input -> [21102]
+  1987  add [1993], [0] -> [1105]
+  1991  add [2634], [1006] -> [1129]
+  1995  ???2010
+  1996  add 316, 0 -> rel[1]  ;; str_stuck
+  2000  add 2007, 0 -> rel[0]
+  2004  jump-if-true 1, 1234  ;; out_phrase
+  2007  jump-if-false 0, 2076
+  2010  add 0, 0 -> rel[-1]
+  2014  add rel[-1], 1894 -> [2019]
+  2018  mul [0], 1 -> rel[1]
+  2022  add 0, 0 -> rel[2]
+  2026  add 0, 0 -> rel[3]
+  2030  mul 2037, 1 -> rel[0]
+  2034  jump-if-false 0, 2525
+  2037  jump-if-false rel[1], 2054
+  2040  add rel[-1], 1934 -> [2050]
+  2044  mul 1, 2051 -> rel[0]
+  2048  jump-if-true 1, [0]
+  2051  jump-if-false 0, 2076
+  2054  add rel[-1], 1 -> rel[-1]
+  2058  lt rel[-1], 7 -> rel[-2]
+  2062  jump-if-true rel[-2], 2014
+  2065  add 0, 177 -> rel[1]
+  2069  mul 2076, 1 -> rel[0]
+  2073  jump-if-true 1, 1234  ;; out_phrase
+  2076  arb -3
+  2078  jump-if-true 1, rel[0]
+
+  2081  arb 3
+  2083  add [1128], rel[-2] -> [2088]
+  2087  add [0], 0 -> rel[-1]
+  2091  jump-if-true rel[-1], 2108
+  2094  mul 201, 1 -> rel[1]
+  2098  mul 2105, 1 -> rel[0]
+  2102  jump-if-false 0, 1234  ;; out_phrase
+  2105  jump-if-false 0, 2119
+  2108  add 0, rel[-1] -> rel[1]
+  2112  add 2119, 0 -> rel[0]
+  2116  jump-if-false 0, 1424
+  2119  arb -3
+  2121  jump-if-true 1, rel[0]
+
+  2124  .int 0
+
+  2125  arb 1
+  2127  add 0, 0 -> [2124]
+  2131  add 4601, 0 -> rel[1]
+  2135  mul 13, 1 -> rel[2]
+  2139  mul 1, 4 -> rel[3]
+  2143  mul 1, 2173 -> rel[4]
+  2147  add 2154, 0 -> rel[0]
+  2151  jump-if-false 0, 1130
+  2154  jump-if-true [2124], 2168
+  2157  mul 1, 226 -> rel[1]
+  2161  add 2168, 0 -> rel[0]
+  2165  jump-if-true 1, 1234  ;; out_phrase
+  2168  arb -1
+  2170  jump-if-false 0, rel[0]
+
+  2173  arb 3
+  2175  jump-if-true [2124], 2275
+  2178  add rel[-2], 0 -> [2183]
+  2182  eq [0], [1128] -> rel[-1]
+  2186  jump-if-false rel[-1], 2275
+  2189  add rel[-2], 1 -> [2195]
+  2193  add 0, [0] -> rel[-1]
+  2197  mul 1, rel[-1] -> rel[1]
+  2201  add 5, 0 -> rel[2]
+  2205  mul 1, 1 -> rel[3]
+  2209  mul 2216, 1 -> rel[0]
+  2213  jump-if-true 1, 2525
+  2216  jump-if-false rel[1], 2275
+  2219  mul 258, 1 -> rel[1]
+  2223  add 0, 2230 -> rel[0]
+  2227  jump-if-false 0, 1234  ;; out_phrase
+  2230  add 0, rel[-1] -> rel[1]
+  2234  add 0, 2241 -> rel[0]
+  2238  jump-if-true 1, 1234  ;; out_phrase
+  2241  output 46
+  2243  output 10
+  2245  add 1, 0 -> [2124]
+  2249  add rel[-2], 0 -> [2256]
+  2253  mul -1, 1 -> [0]
+  2257  add rel[-2], 3 -> [2262]
+  2261  add [0], 0 -> rel[-1]
+  2265  jump-if-false rel[-1], 2275
+  2268  add 2275, 0 -> rel[0]
+  2272  jump-if-true 1, rel[-1]
+  2275  arb -3
+  2277  jump-if-false 0, rel[0]
+
+  2280  .int 0
+
+  2281  arb 1
+  2283  add 0, 0 -> [2280]
+  2287  mul 4601, 1 -> rel[1]
+  2291  mul 13, 1 -> rel[2]
+  2295  mul 1, 4 -> rel[3]
+  2299  add 0, 2329 -> rel[4]
+  2303  add 0, 2310 -> rel[0]
+  2307  jump-if-false 0, 1130
+  2310  jump-if-true [2280], 2324
+  2313  mul 273, 1 -> rel[1]
+  2317  mul 1, 2324 -> rel[0]
+  2321  jump-if-true 1, 1234  ;; out_phrase
+  2324  arb -1
+  2326  jump-if-true 1, rel[0]
+
+  2329  arb 3
+  2331  jump-if-true [2280], 2413
+  2334  add rel[-2], 0 -> [2339]
+  2338  eq [0], -1 -> rel[-1]
+  2342  jump-if-false rel[-1], 2413
+  2345  add rel[-2], 1 -> [2351]
+  2349  mul 1, [0] -> rel[-1]
+  2353  add 0, rel[-1] -> rel[1]
+  2357  mul 5, 1 -> rel[2]
+  2361  mul 1, 1 -> rel[3]
+  2365  mul 1, 2372 -> rel[0]
+  2369  jump-if-false 0, 2525
+  2372  jump-if-false rel[1], 2413
+  2375  mul 301, 1 -> rel[1]
+  2379  add 0, 2386 -> rel[0]
+  2383  jump-if-false 0, 1234  ;; out_phrase
+  2386  mul rel[-1], 1 -> rel[1]
+  2390  mul 1, 2397 -> rel[0]
+  2394  jump-if-false 0, 1234  ;; out_phrase
+  2397  output 46
+  2399  output 10
+  2401  add 0, 1 -> [2280]
+  2405  add rel[-2], 0 -> [2412]
+  2409  mul 1, [1128] -> [0]
+  2413  arb -3
+  2415  jump-if-true 1, rel[0]
+
+  2418  arb 1
+  2420  mul -1, 1 -> rel[1]
+  2424  mul 1, 2431 -> rel[0]
+  2428  jump-if-true 1, 1310
+  2431  jump-if-true rel[1], 2445
+  2434  mul 133, 1 -> rel[1]
+  2438  mul 2445, 1 -> rel[0]
+  2442  jump-if-false 0, 1234  ;; out_phrase
+  2445  arb -1
+  2447  jump-if-true 1, rel[0]
+
+  2450  arb 1
+  2452  mul 3, 1 -> rel[1]
+  2456  add 0, 2463 -> rel[0]
+  2460  jump-if-true 1, 2081
+  2463  arb -1
+  2465  jump-if-true 1, rel[0]
+
+  2468  arb 1
+  2470  mul 4, 1 -> rel[1]
+  2474  mul 1, 2481 -> rel[0]
+  2478  jump-if-true 1, 2081
+  2481  arb -1
+  2483  jump-if-true 1, rel[0]
+
+  2486  .int 64
+
+  2487  arb 1
+  2489  mul 1, 5 -> rel[1]
+  2493  add 2500, 0 -> rel[0]
+  2497  jump-if-true 1, 2081
+  2500  arb -1
+  2502  jump-if-false 0, rel[0]
+
+  2505  arb 1
+  2507  mul 1, 6 -> rel[1]
+  2511  add 0, 2518 -> rel[0]
+  2515  jump-if-false 0, 2081
+  2518  arb -1
+  2520  jump-if-true 1, rel[0]
+
+  2523  .int 0
+  2524  .int 0
+
+  2525  arb 5
+  2527  mul 1, rel[-3] -> [2523]
+  2531  mul 1, 1 -> [2524]
+  2535  add 0, rel[-4] -> rel[1]
+  2539  add 0, 2585 -> rel[2]
+  2543  add 2550, 0 -> rel[0]
+  2547  jump-if-false 0, 1174
+  2550  jump-if-false rel[-2], 2576
+  2553  mul rel[-4], 1 -> [2558]
+  2557  add [0], rel[-3] -> [2566]
+  2561  add 3094, [2566] -> [2566]
+  2565  eq [0], -1 -> rel[-1]
+  2569  jump-if-true rel[-1], 2576
+  2572  add 0, 0 -> [2524]
+  2576  mul [2524], 1 -> rel[-4]
+  2580  arb -5
+  2582  jump-if-false 0, rel[0]
+
+  2585  arb 5
+  2587  add rel[-4], rel[-3] -> rel[-4]
+  2591  add rel[-4], rel[-2] -> rel[-4]
+  2595  eq rel[-4], 10 -> rel[-1]
+  2599  jump-if-false rel[-1], 2606
+  2602  add 0, -1 -> rel[-4]
+  2606  add rel[-3], [2523] -> [2615]
+  2610  add [2615], 3094 -> [2615]
+  2614  add [0], 0 -> rel[-1]
+  2618  eq rel[-4], rel[-1] -> rel[-1]
+  2622  jump-if-true rel[-1], 2629
+  2625  mul 1, 0 -> [2524]
+  2629  arb -5
+  2631  jump-if-true 1, rel[0]
+
+  2634  arb 4
+  2636  mul 3094, 1 -> rel[1]
+  2640  mul 30, 1 -> rel[2]
+  2644  mul 1, 1 -> rel[3]
+  2648  add 2706, 0 -> rel[4]
+  2652  add 0, 2659 -> rel[0]
+  2656  jump-if-false 0, 1130
+  2659  add 0, 0 -> rel[-3]
+  2663  input -> rel[-2]
+  2665  eq rel[-2], 10 -> rel[-1]
+  2669  jump-if-true rel[-1], 2701
+  2672  lt rel[-2], 0 -> rel[-1]
+  2676  jump-if-true rel[-1], 2663
+  2679  lt rel[-3], 29 -> rel[-1]
+  2683  jump-if-false rel[-1], 2663
+  2686  add 3094, rel[-3] -> [2693]
+  2690  add rel[-2], 0 -> [0]
+  2694  add rel[-3], 1 -> rel[-3]
+  2698  jump-if-true 1, 2663
+  2701  arb -4
+  2703  jump-if-true 1, rel[0]
+
+  2706  arb 2
+  2708  add 0, rel[-1] -> [2715]
+  2712  add 0, -1 -> [0]
+  2716  arb -2
+  2718  jump-if-false 0, rel[0]
+
+g2721:
+  2721  .int 0
+
+// at 2722
+fn for_each_bit(tw: Int, nbits: Int, f: fn(bool, Int)) {
+    g2721 = f;
+    if tw < 0 {
+        tw = 0;
+    }
+    call for_each_bit_helper(tw, nbits, 1);
+}
+
+  2722  arb 5
+  2724  add 0, rel[-2] -> [2721]
+  2728  lt rel[-4], 0 -> rel[-1]
+  2732  jump-if-false rel[-1], 2739
+  2735  mul 0, 1 -> rel[-4]
+> 2739  mul rel[-4], 1 -> rel[1]
+  2743  add 0, rel[-3] -> rel[2]
+  2747  add 1, 0 -> rel[3]
+  2751  add 0, 2758 -> rel[0]
+  2755  jump-if-false 0, 2763
+  2758  arb -5
+  2760  jump-if-true 1, rel[0]
+
+// at 2763
+// This recursive function amounts to the loop:
+//
+//     for b in (0..nbits).rev() {
+//         g2721((tw & (1 << b)) != 0, nbits - b);
+//     }
+//
+fn for_each_bit_helper(tw: Int, nbits: Int, bit: Int) -> Int {
+    if nbits < 1 && tw < bit {
+        tw
+    } else {
+        let result /* clobbering a1 in rel[-5]*/ = for_each_bit_helper(tw, nbits - 1, 2 * bit);
+        let is_set = result >= bit;
+        let masked_bit /* clobbering bit */ = (is_set as Int) * bit;
+        if nbits > 0 {
+            g2721(is_set, nbits);
+        }
+        result - masked_bit
+    }
+}
+
+  2763  arb 6
+  2765  lt rel[-4], 1 -> rel[-1]
+  2769  jump-if-false rel[-1], 2786
+  2772  lt rel[-5], rel[-3] -> rel[-1]
+  2776  jump-if-false rel[-1], 2786
+  2779  add 0, rel[-5] -> rel[-5]
+  2783  jump-if-true 1, 2858
+> 2786  add rel[-5], 0 -> rel[1]
+  2790  add rel[-4], -1 -> rel[2]
+  2794  mul rel[-3], 2 -> rel[3]
+  2798  add 2805, 0 -> rel[0]
+  2802  jump-if-false 0, 2763
+  2805  mul 1, rel[1] -> rel[-5]
+  2809  mul 1, 1 -> rel[-2]
+  2813  lt rel[-5], rel[-3] -> rel[-1]
+  2817  jump-if-false rel[-1], 2824
+  2820  mul 0, 1 -> rel[-2]
+> 2824  mul rel[-3], rel[-2] -> rel[-3]
+  2828  lt 0, rel[-4] -> rel[-1]
+  2832  jump-if-false rel[-1], 2850
+  2835  mul rel[-2], 1 -> rel[1]
+  2839  add rel[-4], -1 -> rel[2]
+  2843  add 2850, 0 -> rel[0]
+  2847  jump-if-false 0, [2721]
+> 2850  mul rel[-3], -1 -> rel[-3]
+  2854  add rel[-5], rel[-3] -> rel[-5]
+> 2858  arb -6
+  2860  jump-if-false 0, rel[0]
+
+// at 2863
+fn out_int(mut arg: Int) {
+    if arg != 0 {
+        if arg < 0 {
+            print!("-");
+            arg = -arg;
+        }
+        call out_positive_int(arg);
+    } else {
+        print!("0");
+    }
+}
+
+  2863  arb 3
+  2865  eq rel[-2], 0 -> rel[-1]
+  2869  jump-if-true rel[-1], 2902
+  2872  lt rel[-2], 0 -> rel[-1]
+  2876  jump-if-true rel[-1], 2882
+  2879  jump-if-true 1, 2888
+> 2882  output 45
+  2884  mul rel[-2], -1 -> rel[-2]
+> 2888  add 0, rel[-2] -> rel[1]
+  2892  add 0, 2899 -> rel[0]
+  2896  jump-if-false 0, 2909 ;; out_word
+  2899  jump-if-true 1, 2904
+> 2902  output 48
+> 2904  arb -3
+  2906  jump-if-false 0, rel[0]
+
+// at 2909
+fn out_positive_int(x: Int) {
+    let (q, last_digit) = divmod(x, 10);
+    if q != 0 {
+        out_positive_int(q);
+    }
+    print!("{}", last_digit);
+}
+
+< 2909  arb 4
+  2911  add rel[-3], 0 -> rel[1]
+  2915  mul 1, 10 -> rel[2]
+  2919  mul 1, 2926 -> rel[0]
+  2923  jump-if-false 0, 3010  ;; divmod
+  2926  mul 1, rel[1] -> rel[-2]
+  2930  add rel[2], 0 -> rel[-1]
+  2934  jump-if-false rel[-2], 2948
+  2937  mul rel[-2], 1 -> rel[1]
+  2941  add 0, 2948 -> rel[0]
+  2945  jump-if-true 1, 2909 ;; out_word
+> 2948  add 48, rel[-1] -> rel[-1]
+  2952  output rel[-1]
+  2954  arb -4
+  2956  jump-if-true 1, rel[0]
+
+static POWERS_OF_TWO: [Int; 51] = [  // at 2959
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+    64,
+    128,
+    256,
+    512,
+    1024,
+    2048,
+    4096,
+    8192,
+    16384,
+    32768,
+    65536,
+    131072,
+    262144,
+    524288,
+    1048576,
+    2097152,
+    4194304,
+    8388608,
+    16777216,
+    33554432,
+    67108864,
+    134217728,
+    268435456,
+    536870912,
+    1073741824,
+    2147483648,
+    4294967296,
+    8589934592,
+    17179869184,
+    34359738368,
+    68719476736,
+    137438953472,
+    274877906944,
+    549755813888,
+    1099511627776,
+    2199023255552,
+    4398046511104,
+    8796093022208,
+    17592186044416,
+    35184372088832,
+    70368744177664,
+    140737488355328,
+    281474976710656,
+    562949953421312,
+    1125899906842624,
+];
+
+// at 3010
+// Return (n / d, n % d). Works for (at a guess) n, d in 0..2**52-1.
+// Weird--it would have been less code to support all positive integers.
+fn divmod(
+    mut n: Int,  // in rel[1]
+    d: Int,  // in rel[2]
+) -> (Int, Int) {
+    let mut r = 0;
+    let mut q = 0;
+
+    for e in (0..51).rev()
+        invariant r == (n >> (51 - e)) % d && q == (n >> 51 - e) / d
+    {
+        let bit = 1 << e;  // actual code reads this from the POWERS_OF_TWO table above
+        r *= 2;
+        if n >= bit {
+            r += 1;
+            n -= bit;
+        }
+        if r >= d {
+            r -= d;
+            q += bit;
+        }
+    }
+    (q, r)  //return to the address stored at rel[0] after popping 8 locals, with these values stored in r6 and r7
+}
+
+divmod:
+  3010  arb 8
+  3012  add 0, 0 -> rel[-4]
+  3016  add 0, 0 -> rel[-3]
+  3020  add 0, 51 -> rel[-2]
+< 3024  add rel[-2], -1 -> rel[-2]
+  3028  add rel[-2], 2959 -> [3034]
+  3032  add 0, [0] -> rel[-1]
+  3036  mul rel[-3], 2 -> rel[-3]
+  3040  lt rel[-7], rel[-1] -> rel[-5]
+  3044  jump-if-true rel[-5], 3059
+  3047  add rel[-3], 1 -> rel[-3]
+  3051  mul -1, rel[-1] -> rel[-5]
+  3055  add rel[-7], rel[-5] -> rel[-7]
+> 3059  lt rel[-3], rel[-6] -> rel[-5]
+  3063  jump-if-true rel[-5], 3078
+  3066  mul -1, rel[-6] -> rel[-5]
+  3070  add rel[-3], rel[-5] -> rel[-3]
+  3074  add rel[-1], rel[-4] -> rel[-4]
+> 3078  jump-if-true rel[-2], 3024
+  3081  mul rel[-4], 1 -> rel[-7]
+  3085  mul rel[-3], 1 -> rel[-6]
+  3089  arb -8
+  3091  jump-if-false 0, rel[0]
+
+  3094  .int 0
+  3095  .int 0
+  3096  .int 0
+  3097  .int 0
+  3098  .int 0
+  3099  .int 0
+  3100  .int 0
+  3101  .int 0
+  3102  .int 0
+  3103  .int 0
+  3104  .int 0
+  3105  .int 0
+  3106  .int 0
+  3107  .int 0
+  3108  .int 0
+  3109  .int 0
+  3110  .int 0
+  3111  .int 0
+  3112  .int 0
+  3113  .int 0
+  3114  .int 0
+  3115  .int 0
+  3116  .int 0
+  3117  .int 0
+  3118  .int 0
+  3119  .int 0
+  3120  .int 0
+  3121  .int 0
+  3122  .int 0
+  3123  .int 0
+
+struct Room {
+    name: &'static AdStr,
+    description: &'static AdStr,
+    on_entry: fn(),
+    exits: [&'static Room; 4],
+}
+
+static RM_HUL: Room = {
+    name: "Hull Breach",
+    description: "You got in through a hole in the floor here. To keep your ship from also freezing, the hole has been sealed.",
+    on_entry: None,
+    exits: [
+        None,
+        Some(&RM_GIF),
+        Some(&RM_CRE),
+        Some(&RM_SIC),
+    ],
+};
+
+static RM_SIC: Room = Room {
+    name: "Sick Bay",
+    description: "Supports both Red-Nosed Reindeer medicine and regular reindeer medicine.",
+    on_entry: None,
+    exits: [
+        Some(&RM_HAL),
+        Some(&RM_HUL),
+        Some(&RM_ARC),
+        None,
+    ],
+};
+
+static RM_HAL: Room = Room {
+    name: "Hallway",
+    description: "This area has been optimized for something; you're just not quite sure what.",
+    on_entry: None,
+    exits: [
+        Some(&RM_COR),
+        Some(&RM_ENG),
+        Some(&RM_SIC),
+        None,
+    ],
+};
+
+static RM_ARC: Room = Room {
+    name: "Arcade",
+    description: "None of the cabinets seem to have power.",
+    on_entry: None,
+    exits: [
+        Some(&RM_SIC),
+        Some(&RM_WAR),
+        Some(&RM_HOL),
+        None,
+    ],
+};
+
+static RM_COR: Room = Room {
+    name: "Corridor",
+    description: "The metal walls and the metal floor are slightly different colors. Or are they?",
+    on_entry: None,
+    exits: [
+        Some(&RM_PAS),
+        None,
+        Some(&RM_HAL),
+        None,
+    ],
+};
+
+static RM_GIF: Room = Room {
+    name: "Gift Wrapping Center",
+    description: "How else do you wrap presents on the go?",
+    on_entry: None,
+    exits: [
+        None,
+        Some(&RM_KIT),
+        None,
+        Some(&RM_HUL),
+    ],
+};
+
+static RM_KIT: Room = Room {
+    name: "Kitchen",
+    description: "Everything's freeze-dried.",
+    on_entry: None,
+    exits: [
+        None,
+        None,
+        None,
+        Some(&RM_GIF),
+    ],
+};
+
+static RM_HOL: Room = Room {
+    name: "Holodeck",
+    description: "Someone seems to have left it on the Giant Grid setting.",
+    on_entry: None,
+    exits: [
+        Some(&RM_ARC),
+        None,
+        None,
+        None,
+    ],
+};
+
+static RM_WAR: Room = Room {
+    name: "Warp Drive Maintenance",
+    description: "It appears to be working normally.",
+    on_entry: None,
+    exits: [
+        None,
+        Some(&RM_NAV),
+        Some(&RM_STA),
+        Some(&RM_ARC),
+    ],
+};
+
+static RM_ENG: Room = Room {
+    name: "Engineering",
+    description: "You see a whiteboard with plans for Springdroid v2.",
+    on_entry: None,
+    exits: [
+        None,
+        None,
+        None,
+        Some(&RM_HAL),
+    ],
+};
+
+static RM_NAV: Room = Room {
+    name: "Navigation",
+    description: "Status: Stranded. Please supply measurements from fifty stars to recalibrate.",
+    on_entry: None,
+    exits: [
+        None,
+        Some(&RM_STO),
+        Some(&RM_HOT),
+        Some(&RM_WAR),
+    ],
+};
+
+static RM_CRE: Room = Room {
+    name: "Crew Quarters",
+    description: "The beds are all too small for you.",
+    on_entry: None,
+    exits: [
+        Some(&RM_HUL),
+        Some(&RM_OBS),
+        None,
+        None,
+    ],
+};
+
+static RM_STO: Room = Room {
+    name: "Storage",
+    description: "The boxes just contain more boxes.  Recursively.",
+    on_entry: None,
+    exits: [
+        None,
+        None,
+        Some(&RM_SCI),
+        Some(&RM_NAV),
+    ],
+};
+
+static RM_HOT: Room = Room {
+    name: "Hot Chocolate Fountain",
+    description: "Somehow, it's still working.",
+    on_entry: None,
+    exits: [
+        Some(&RM_NAV),
+        None,
+        None,
+        None,
+    ],
+};
+
+static RM_PAS: Room = Room {
+    name: "Passages",
+    description: "They're a little twisty and starting to look all alike.",
+    on_entry: None,
+    exits: [
+        None,
+        None,
+        Some(&RM_COR),
+        None,
+    ],
+};
+
+static RM_OBS: Room = Room {
+    name: "Observatory",
+    description: "There are a few telescopes; they're all bolted down, though.",
+    on_entry: None,
+    exits: [
+        None,
+        None,
+        None,
+        Some(&RM_CRE),
+    ],
+};
+
+static RM_STA: Room = Room {
+    name: "Stables",
+    description: "Reindeer-sized. They're all empty.",
+    on_entry: None,
+    exits: [
+        Some(&RM_WAR),
+        None,
+        None,
+        None,
+    ],
+};
+
+static RM_SCI: Room = Room {
+    name: "Science Lab",
+    description: "You see evidence here of prototype polymer design work.",
+    on_entry: None,
+    exits: [
+        Some(&RM_STO),
+        None,
+        Some(&RM_SEC),
+        None,
+    ],
+};
+
+static RM_SEC: Room = Room {
+    name: "Security Checkpoint",
+    description: "In the next room, a pressure-sensitive floor will verify your identity.",
+    on_entry: None,
+    exits: [
+        Some(&RM_SCI),
+        None,
+        None,
+        Some(&RM_PRE),
+    ],
+};
+
+static RM_PRE: Room = Room {
+    name: "Pressure-Sensitive Floor",
+    description: "Analyzing...",
+    on_entry: Some(analysis),
+    exits: [
+        None,
+        Some(&RM_SEC),
+        None,
+        None,
+    ],
+};
+
+struct Item {
+    location: &'static Room,
+    name: &'static AdStr,
+    encoded_weight: Int,
+    on_take: fn()
+}
+
+mut static ITEMS: [Item; 13] = [
+    Item {
+        location: &RM_HOT,
+        name: "photons",
+        encoded_weight: 27,
+        on_take: Some(on_taking_photons),
+    },
+
+    Item {
+        location: &RM_ARC,
+        name: "giant electromagnet",
+        encoded_weight: 28,
+        on_take: Some(on_taking_giant_electromagnet),
+    },
+
+    Item {
+        location: &RM_STO,
+        name: "space law space brochure",
+        encoded_weight: 1053,
+        on_take: None,
+    },
+
+    Item {
+        location: &RM_WAR,
+        name: "escape pod",
+        encoded_weight: 30,
+        on_take: Some(on_taking_escape_pod),
+    },
+
+    Item {
+        location: &RM_ENG,
+        name: fixed point",
+        encoded_weight: 33,
+        on_take: None,
+    },
+
+    Item {
+        location: &RM_KIT,
+        name: "molten lava",
+        encoded_weight: 32,
+        on_take: Some(on_taking_molten_lava),
+    },
+
+    Item {
+        location: &RM_HOL,
+        name: "candy cane",
+        encoded_weight: 262177,
+        on_take: None,
+    },
+
+    Item {
+        location: &RM_COR,
+        name: "infinite loop",
+        encoded_weight: 34,
+        on_take: Some(on_taking_infinite_loop),
+    },
+
+    Item {
+        location: &RM_GIF,
+        name: "sand",
+        encoded_weight: 67,
+        on_take: None,
+    },
+
+    Item {
+        location: &RM_CRE,
+        name: "ornament",
+        encoded_weight: 67108900,
+        on_take: None,
+    },
+
+    Item {
+        location: &RM_SCI,
+        name: "fuel cell",
+        encoded_weight: 524325,
+        on_take: None,
+    },
+
+    Item {
+        location: &RM_PAS,
+        name: "spool of cat6",
+        encoded_weight: 268435494,
+        on_take: None,
+    },
+
+    Item {
+        location: &RM_HAL,
+        name: "wreath",
+        encoded_weight: 16777255,
+        on_take: None,
+    },
+];

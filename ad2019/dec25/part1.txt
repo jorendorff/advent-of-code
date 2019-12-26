@@ -1,0 +1,20 @@
+east
+take sand
+west
+west
+north
+take wreath
+east
+take fixed point
+west
+north
+south
+south
+south
+east
+east
+east
+take space law space brochure
+south
+south
+west
