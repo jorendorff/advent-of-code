@@ -114,13 +114,13 @@ class TestDisassembler(unittest.TestCase):
         p1 = [3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,
               27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5]
         self.assertEqual(self.dis(p1), [
-            '     0  input -> 26',
-            '     2  add [26], -4 -> 26',
-            '     6  input -> 27',
-            '     8  mul [27], 2 -> 27',
-            '    12  add [27], [26] -> 27',
+            '     0  input -> [26]',
+            '     2  add [26], -4 -> [26]',
+            '     6  input -> [27]',
+            '     8  mul [27], 2 -> [27]',
+            '    12  add [27], [26] -> [27]',
             '    16  output [27]',
-            '    18  add [28], -1 -> 28',
+            '    18  add [28], -1 -> [28]',
             '    22  jump-if-true [28], 6',
             '    25  halt',
             # The rest of this image is not instructions,
@@ -136,23 +136,38 @@ class TestDisassembler(unittest.TestCase):
               -5,54,1105,1,12,1,53,54,53,1008,54,0,55,1001,55,1,55,2,53,55,53,4,
               53,1001,56,-1,56,1005,56,6,99,0,0,0,0,10]
         self.assertEqual(self.dis(p2[:52]), [
-            '     0  input -> 52',
-            '     2  add [52], -5 -> 52',
-            '     6  input -> 53',
-            '     8  add [52], [56] -> 54',
-            '    12  lt [54], 5 -> 55',
+            '     0  input -> [52]',
+            '     2  add [52], -5 -> [52]',
+            '     6  input -> [53]',
+            '     8  add [52], [56] -> [54]',
+            '    12  lt [54], 5 -> [55]',
             '    16  jump-if-true [55], 26',
-            '    19  add [54], -5 -> 54',
+            '    19  add [54], -5 -> [54]',
             '    23  jump-if-true 1, 12',
-            '    26  add [53], [54] -> 53',
-            '    30  eq [54], 0 -> 55',
-            '    34  add [55], 1 -> 55',
-            '    38  mul [53], [55] -> 53',
+            '    26  add [53], [54] -> [53]',
+            '    30  eq [54], 0 -> [55]',
+            '    34  add [55], 1 -> [55]',
+            '    38  mul [53], [55] -> [53]',
             '    42  output [53]',
-            '    44  add [56], -1 -> 56',
+            '    44  add [56], -1 -> [56]',
             '    48  jump-if-true [56], 6',
             '    51  halt'
         ])
 
 if __name__ == '__main__':
-    unittest.main()
+    import sys
+    from . import interpreter
+    if sys.argv[1:] == ["--test"]:
+        unittest.main()
+    elif len(sys.argv) == 2:
+        with open(sys.argv[1]) as f:
+            text = f.read()
+        program = interpreter.parse(text)
+        dis(program)
+    else:
+        ok = sys.argv[1:] in ([], ["-h"], ["--help"])
+        if not ok:
+            print("error: unrecognized command-line arguments", sys.argv[1:])
+        print("usage: python -m ad2109.intcode.disassembler FILE")
+        if not ok:
+            sys.exit(1)
