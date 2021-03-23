@@ -62,12 +62,27 @@ def fn_exp(f, n):
         return x
     return g
 
+
 def fn_iter(f, start):
     """Yield the sequence `start, f(start), f(f(start)), ...`"""
     x = start
     while True:
         yield x
         x = f(x)
+
+
+def fix(f, start):
+    """Find a fix point of `f` by iteration, starting at `start`.
+
+    If `fn_iter(f, start) never reaches a fixed point, this never returns.
+    """
+    it = fn_iter(f, start)
+    prev = next(it)
+    for v in it:
+        if v == prev:
+            return v
+        prev = v
+
 
 class Cycle:
     """Information about a sequence (of hashable values) that eventually cycles."""
@@ -273,14 +288,33 @@ assert LabeledDigraph([(0, 'W', 1), (1, 'S', 2)]).shortest_path(0, 2) == ['W', '
 assert LabeledDigraph([(1, 'S', 2), (0, 'W', 1)]).shortest_path(0, 2) == ['W', 'S']
 
 
+# Parsing
+
+def tokenize(pattern, str, whitespace=r'\s'):
+    import re
+    token_re = re.compile(pattern)
+    whitespace_re = re.compile(rf'(?:{whitespace})*')
+
+    i = 0
+    while i < len(str):
+        i = whitespace_re.match(str, i).end()
+        if i == len(str):
+            break
+        m = token_re.match(str, i)
+        if m is None:
+            raise ValueError(f"elves could not make sense of:\n    {str}\n    {'':{i}}^")
+        yield m.group()
+        i = m.end()
+
+assert list(tokenize(r'\w+|\d+|[()[\]+]', '21 + roger[vector 3]')) == ['21', '+', 'roger', '[', 'vector', '3', ']']
+
+
 # Algorithms
 
 def bisect(predicate, lo=0, hi=None):
     """Return the least value i in range(lo, hi+1) for which predicate(i) is true,
     assuming predicate is monotonic.
     """
-    assert not predicate(lo)
-
     if hi is None:
         hi = 4
         while not predicate(hi):
@@ -288,14 +322,29 @@ def bisect(predicate, lo=0, hi=None):
     else:
         assert predicate(hi)
 
-    while lo + 1 < hi:
+    while lo < hi:
         mid = (lo + hi) // 2
         if predicate(mid):
             hi = mid
         else:
-            lo = mid
+            lo = mid + 1
     return hi
 
+
+class IntervalSet:
+    def __init__(self, ranges):
+        out = []
+        for start, stop in sorted(ranges):
+            if len(out) == 0 or start > out[-1][1]:
+                out.append((start, stop))
+            else:
+                out[-1] = (out[-1][0], max(out[-1][1], stop))
+        self.spans = out
+
+    def __contains__(self, v):
+        n = len(self.spans)
+        i = bisect(lambda j: j == n or v < self.spans[j][1], 0, n)
+        return i < n and self.spans[i][0] <= v
 
 # Diagnostics
 
