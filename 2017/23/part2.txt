@@ -1,0 +1,16 @@
+
+int h = 0;
+for (int b = 105700; b <= 122700; b += 17) {
+    d = 2;
+    do {
+        e = 2;   
+        do {
+            if (d*e == b) { h++; goto next_b; }
+            e++;
+        } while (e != b);
+        d++;
+    } while (d != b);
+
+  next_b: ;
+}
+return h;
