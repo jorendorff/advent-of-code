@@ -8,3 +8,6 @@ venv
 # Rust build directories
 target
 */Cargo.lock
+
+# cargo-aoc files
+ad2021/input
