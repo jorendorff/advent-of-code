@@ -1,11 +1,12 @@
 use aoc_runner_derive::*;
 
-#[aoc_generator(day3)]
+#[aoc_generator(day3, part1, jorendorff)]
+#[aoc_generator(day3, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Vec<String>> {
     text.lines().map(|line| Ok(line.to_string())).collect()
 }
 
-#[aoc(day3, part1)]
+#[aoc(day3, part1, jorendorff)]
 fn part_1(lines: &[String]) -> u64 {
     let nbits = lines[0].len();
     let mut counts = vec![0_usize; nbits];
@@ -32,7 +33,7 @@ fn part_1(lines: &[String]) -> u64 {
     gamma * epsilon
 }
 
-#[aoc(day3, part2)]
+#[aoc(day3, part2, jorendorff)]
 fn part_2(lines: &[String]) -> u64 {
     let nbits = lines[0].len();
     let mut numbers = vec![];
@@ -55,7 +56,6 @@ fn part_2(lines: &[String]) -> u64 {
         let ones = o2.iter().cloned().filter(|n| *n & bit == bit).count();
         let most_common_value = ones >= (o2.len() - ones);
         o2.retain(|i| (*i & bit == bit) == most_common_value);
-        println!("retained: {:?}", o2);
         bit >>= 1;
     }
 
@@ -65,7 +65,6 @@ fn part_2(lines: &[String]) -> u64 {
         let ones = co2.iter().cloned().filter(|n| *n & bit == bit).count();
         let least_common_value = ones < co2.len() - ones;
         co2.retain(|i| (*i & bit == bit) == least_common_value);
-        println!("retained: {:?}", co2);
         bit >>= 1;
     }
 

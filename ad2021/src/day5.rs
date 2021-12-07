@@ -46,7 +46,8 @@ fn parse_point(s: &str) -> anyhow::Result<(usize, usize)> {
     Ok((nums[0].parse()?, nums[1].parse()?))
 }
 
-#[aoc_generator(day5)]
+#[aoc_generator(day5, part1, jorendorff)]
+#[aoc_generator(day5, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Vec<Line>> {
     text.lines()
         .map(|line| -> anyhow::Result<Line> {
@@ -57,7 +58,7 @@ fn parse_input(text: &str) -> anyhow::Result<Vec<Line>> {
         .collect()
 }
 
-#[aoc(day5, part1)]
+#[aoc(day5, part1, jorendorff)]
 fn part_1(lines: &[Line]) -> usize {
     lines
         .iter()
@@ -68,7 +69,7 @@ fn part_1(lines: &[Line]) -> usize {
         .count()
 }
 
-#[aoc(day5, part2)]
+#[aoc(day5, part2, jorendorff)]
 fn part_2(lines: &[Line]) -> usize {
     lines
         .iter()

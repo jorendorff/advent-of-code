@@ -2,7 +2,8 @@ use aoc_runner_derive::*;
 
 type Board = Vec<Vec<i32>>;
 
-#[aoc_generator(day4)]
+#[aoc_generator(day4, part1, jorendorff)]
+#[aoc_generator(day4, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<(Vec<i32>, Vec<Board>)> {
     let mut chunks = text.split("\n\n");
     let call_order = chunks
@@ -86,13 +87,13 @@ fn score(call_order: &[i32], time: usize, winning_board: &Board) -> i32 {
     total_unmarked_nums * last_called
 }
 
-#[aoc(day4, part1)]
+#[aoc(day4, part1, jorendorff)]
 fn part_1((call_order, boards): &(Vec<i32>, Vec<Board>)) -> i32 {
     let (time, winning_board) = common(call_order, boards).min().unwrap();
     score(call_order, time, winning_board)
 }
 
-#[aoc(day4, part2)]
+#[aoc(day4, part2, jorendorff)]
 fn part_2((call_order, boards): &(Vec<i32>, Vec<Board>)) -> i32 {
     let (time, winning_board) = common(call_order, boards).max().unwrap();
     score(call_order, time, winning_board)

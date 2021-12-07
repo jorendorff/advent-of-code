@@ -8,7 +8,8 @@ enum Command {
 
 use Command::*;
 
-#[aoc_generator(day2)]
+#[aoc_generator(day2, part1, jorendorff)]
+#[aoc_generator(day2, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Vec<Command>> {
     text.lines()
         .map(|line| {
@@ -25,7 +26,7 @@ fn parse_input(text: &str) -> anyhow::Result<Vec<Command>> {
         .collect()
 }
 
-#[aoc(day2, part1)]
+#[aoc(day2, part1, jorendorff)]
 fn part_1(commands: &[Command]) -> u64 {
     let (x, d) = commands.iter().fold((0, 0), |(x, d), cmd| match cmd {
         Forward(n) => (x + n, d),
@@ -35,7 +36,7 @@ fn part_1(commands: &[Command]) -> u64 {
     x * d
 }
 
-#[aoc(day2, part2)]
+#[aoc(day2, part2, jorendorff)]
 fn part_2(commands: &[Command]) -> u64 {
     let (x, d, _a) = commands.iter().fold((0, 0, 0), |(x, d, a), cmd| match cmd {
         Forward(n) => (x + n, d + a * n, a),

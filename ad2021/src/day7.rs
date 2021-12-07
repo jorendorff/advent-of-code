@@ -1,13 +1,16 @@
 use aoc_runner_derive::*;
 
-#[aoc_generator(day7)]
+#[aoc_generator(day7, part1, jorendorff)]
+#[aoc_generator(day7, part1, jorendorff_binary_search)]
+#[aoc_generator(day7, part2, jorendorff_binary_search)]
+#[aoc_generator(day7, part2, jorendorff_parabolic)]
 fn parse_input(text: &str) -> Result<Vec<i64>, std::num::ParseIntError> {
     text.split(',')
         .map(|num| num.trim().parse::<i64>())
         .collect()
 }
 
-#[aoc(day7, part1, median)]
+#[aoc(day7, part1, jorendorff)]
 fn part_1(nums: &[i64]) -> i64 {
     let n = nums.len();
     let mut nums = nums.to_vec();
@@ -39,7 +42,7 @@ fn find_minimum<F: Fn(i64) -> i64>(mut lo: i64, mut hi: i64, f: F) -> i64 {
     lo
 }
 
-#[aoc(day7, part1, binary_search)]
+#[aoc(day7, part1, jorendorff_binary_search)]
 fn part_1_binary_search(nums: &[i64]) -> i64 {
     let fuel_cost = |x: i64| -> i64 { nums.iter().map(|&xi| (x - xi).abs()).sum() };
     let lo = nums.iter().copied().min().unwrap();
@@ -48,7 +51,7 @@ fn part_1_binary_search(nums: &[i64]) -> i64 {
     fuel_cost(x)
 }
 
-#[aoc(day7, part2, binary_search)]
+#[aoc(day7, part2, jorendorff_binary_search)]
 fn part_2_binary_search(nums: &[i64]) -> i64 {
     // The fuel cost for a crab at x0, in terms of x, is a function of the
     // distance traveled, `d = (x - x0).abs()`. It is, specifically, the d'th
@@ -68,7 +71,7 @@ fn part_2_binary_search(nums: &[i64]) -> i64 {
     fuel_cost_at(find_minimum(lo, hi, fuel_cost_at))
 }
 
-#[aoc(day7, part2, parabolic)]
+#[aoc(day7, part2, jorendorff_parabolic)]
 fn part_2(nums: &[i64]) -> i64 {
     let mut nums = nums.to_vec();
     nums.sort_unstable();

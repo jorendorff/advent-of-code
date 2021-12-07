@@ -1,7 +1,8 @@
 use aoc_runner_derive::*;
 
 /// Parse the puzzle input, which is just a series of numbers, one per line.
-#[aoc_generator(day1)]
+#[aoc_generator(day1, part1, jorendorff)]
+#[aoc_generator(day1, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Vec<u64>> {
     let data = text
         .lines()
@@ -10,14 +11,14 @@ fn parse_input(text: &str) -> anyhow::Result<Vec<u64>> {
     Ok(data)
 }
 
-#[aoc(day1, part1)]
-fn count_increases(depths: &[u64]) -> usize {
+#[aoc(day1, part1, jorendorff)]
+fn part_1(depths: &[u64]) -> usize {
     depths.windows(2).filter(|pair| pair[0] < pair[1]).count()
 }
 
-#[aoc(day1, part2)]
-fn count_triplet_increases(depths: &[u64]) -> usize {
-    count_increases(
+#[aoc(day1, part2, jorendorff)]
+fn part_2(depths: &[u64]) -> usize {
+    part_1(
         &depths
             .windows(3)
             .map(|window| window.iter().sum::<u64>())
@@ -44,11 +45,11 @@ mod tests {
 
     #[test]
     fn test_part_1() {
-        assert_eq!(count_increases(&parse_input(EXAMPLE).unwrap()), 7);
+        assert_eq!(part_1(&parse_input(EXAMPLE).unwrap()), 7);
     }
 
     #[test]
     fn test_part_2() {
-        assert_eq!(count_triplet_increases(&parse_input(EXAMPLE).unwrap()), 5);
+        assert_eq!(part_2(&parse_input(EXAMPLE).unwrap()), 5);
     }
 }
