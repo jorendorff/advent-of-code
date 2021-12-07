@@ -7,24 +7,53 @@ fn parse_input(text: &str) -> Result<Vec<i64>, std::num::ParseIntError> {
         .collect()
 }
 
-#[aoc(day7, part1)]
+#[aoc(day7, part1, median)]
 fn part_1(nums: &[i64]) -> i64 {
+    let n = nums.len();
     let mut nums = nums.to_vec();
-    nums.sort_unstable();
-    let x = nums[nums.len() / 2];
-    nums.iter().copied().map(|x0| (x - x0).abs()).sum()
+    *nums.select_nth_unstable(n / 2).1
+}
+
+// Given a U-shaped function `f`, find any coordinate x in the range `lo..hi`
+// for which f(x) is minimal.
+//
+// A U-shaped function has a minimum, but no other local minima. It may have a
+// flat region at the minimum.
+fn find_minimum<F: Fn(i64) -> i64>(mut lo: i64, mut hi: i64, f: F) -> i64 {
+    // Hand-coded binary search, once again.
+    while lo < hi {
+        let mid = lo + (hi - lo) / 2;
+        let fx = f(mid);
+        let fxp1 = f(mid + 1);
+        if fxp1 < fx {
+            lo = mid + 1;
+        } else if fxp1 == fx {
+            break;
+        } else {
+            let fxm1 = f(mid - 1);
+            if fxm1 < fx {
+                hi = mid;
+            } else {
+                break;
+            }
+        }
+    }
+    lo
+}
+
+#[aoc(day7, part1, binary_search)]
+fn part_1_binary_search(nums: &[i64]) -> i64 {
+    let lo = nums.iter().copied().min().unwrap();
+    let hi = nums.iter().copied().max().unwrap() + 1;
+    let x = find_minimum(lo, hi, |x| nums.iter().map(|&xi| (x - xi).abs()).sum());
+    nums.iter().map(|&xi| (x - xi).abs()).sum()
 }
 
 #[aoc(day7, part2, binary_search)]
-fn part_2_original(nums: &[i64]) -> i64 {
-    // The function to minimize is a sum of parabolas--almost. The fuel cost
-    // for a crab at x0, in terms of x, is a function of `d = (x - x0).abs()`.
-    // it is, specifically, the d'th triangle number, `d * (d + 1) / 2`. I
-    // would love to get rid of the abs() part and solve algebraically.
-    // Unfortunately it's not trivial. There is a neat solution with a single
-    // binary search over `nums` (sorted and dedup'd), which involves finding
-    // the vertex of each parabolic slice of the function; only one slice will
-    // actually contain its vertex, and that's the solution.
+fn part_2_binary_search(nums: &[i64]) -> i64 {
+    // The fuel cost for a crab at x0, in terms of x, is a function of the
+    // distance traveled, `d = (x - x0).abs()`. It is, specifically, the d'th
+    // triangle number, `d * (d + 1) / 2`.
     let fuel_cost_at = |x: i64| -> i64 {
         nums.iter()
             .copied()
@@ -35,29 +64,9 @@ fn part_2_original(nums: &[i64]) -> i64 {
             .sum()
     };
 
-    let mut lo = nums.iter().copied().min().unwrap();
-    let mut hi = nums.iter().copied().max().unwrap() + 1;
-
-    // Hand-coded binary search, once again.
-    while lo < hi {
-        let mid = lo + (hi - lo) / 2;
-        let fx = fuel_cost_at(mid);
-        let fxp1 = fuel_cost_at(mid + 1);
-        if fxp1 < fx {
-            lo = mid + 1;
-        } else if fxp1 == fx {
-            break;
-        } else {
-            let fxm1 = fuel_cost_at(mid - 1);
-            if fxm1 < fx {
-                hi = mid;
-            } else {
-                break;
-            }
-        }
-    }
-
-    fuel_cost_at(lo)
+    let lo = nums.iter().copied().min().unwrap();
+    let hi = nums.iter().copied().max().unwrap() + 1;
+    fuel_cost_at(find_minimum(lo, hi, fuel_cost_at))
 }
 
 #[aoc(day7, part2, parabolic)]
@@ -113,7 +122,7 @@ fn part_2(nums: &[i64]) -> i64 {
     /// that is, we can just round to the nearest integer.
     fn xmin(a: i64, b: i64) -> i64 {
         debug_assert!(a > 0, "parabola must open upward");
-        debug_assert!(-b >= 0, "negacrabs?! sorry, code will round incorrectly");
+        debug_assert!(-b >= 0, "negacrabs?! sorry, this will round incorrectly");
         (-b + a) / (2 * a)
     }
 
