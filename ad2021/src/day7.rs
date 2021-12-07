@@ -11,7 +11,8 @@ fn parse_input(text: &str) -> Result<Vec<i64>, std::num::ParseIntError> {
 fn part_1(nums: &[i64]) -> i64 {
     let n = nums.len();
     let mut nums = nums.to_vec();
-    *nums.select_nth_unstable(n / 2).1
+    let x = *nums.select_nth_unstable(n / 2).1;
+    nums.iter().map(|&xi| (x - xi).abs()).sum()
 }
 
 // Given a U-shaped function `f`, find any coordinate x in the range `lo..hi`
@@ -28,14 +29,11 @@ fn find_minimum<F: Fn(i64) -> i64>(mut lo: i64, mut hi: i64, f: F) -> i64 {
         if fxp1 < fx {
             lo = mid + 1;
         } else if fxp1 == fx {
-            break;
+            return mid;
+        } else if f(mid - 1) < fx {
+            hi = mid;
         } else {
-            let fxm1 = f(mid - 1);
-            if fxm1 < fx {
-                hi = mid;
-            } else {
-                break;
-            }
+            return mid;
         }
     }
     lo
@@ -161,6 +159,37 @@ mod tests {
     const EXAMPLE: &str = "\
 16,1,2,0,4,2,7,1,2,14
 ";
+
+    #[test]
+    fn test_find_minimum() {
+        // exhaustively construct all reasonably small test cases
+        for x_min_left in 0..16 {
+            for x_min_right in x_min_left..=(x_min_left + 2) {
+                for right in x_min_right..=(x_min_right + 16) {
+                    let f = move |x| {
+                        if x < x_min_left {
+                            x_min_left - x
+                        } else if x <= x_min_right {
+                            0
+                        } else {
+                            x - x_min_right
+                        }
+                    };
+                    let x_min = find_minimum(0, right, f);
+                    assert!(
+                        x_min_left <= x_min && x_min <= x_min_right,
+                        "failed test case (x_min_left={}, x_min_right={}, right={}); expected {}..={}, got x_min={}",
+                        x_min_left,
+                        x_min_right,
+                        right,
+                        x_min_left,
+                        x_min_right,
+                        x_min,
+                    );
+                }
+            }
+        }
+    }
 
     #[test]
     fn test_part_1() {
