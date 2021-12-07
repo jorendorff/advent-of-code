@@ -40,22 +40,21 @@ impl Line {
     }
 }
 
-fn parse_point(s: &str) -> (usize, usize) {
+fn parse_point(s: &str) -> anyhow::Result<(usize, usize)> {
     let nums = s.split(',').collect_vec();
     assert_eq!(nums.len(), 2);
-    (nums[0].parse().unwrap(), nums[1].parse().unwrap())
+    Ok((nums[0].parse()?, nums[1].parse()?))
 }
 
 #[aoc_generator(day5)]
 fn parse_input(text: &str) -> anyhow::Result<Vec<Line>> {
-    Ok(text
-        .lines()
-        .map(|line| {
+    text.lines()
+        .map(|line| -> anyhow::Result<Line> {
             let fields = line.split(" -> ").collect_vec();
-            assert_eq!(fields.len(), 2);
-            Line::new(parse_point(fields[0]), parse_point(fields[1]))
+            anyhow::ensure!(fields.len() == 2, "failed to parse line {:?}", line);
+            Ok(Line::new(parse_point(fields[0])?, parse_point(fields[1])?))
         })
-        .collect())
+        .collect()
 }
 
 #[aoc(day5, part1)]
