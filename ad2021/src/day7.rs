@@ -15,8 +15,8 @@ fn part_1(nums: &[i64]) -> i64 {
     nums.iter().copied().map(|x0| (x - x0).abs()).sum()
 }
 
-#[aoc(day7, part2)]
-fn part_2(nums: &[i64]) -> i64 {
+#[aoc(day7, part2, binary_search)]
+fn part_2_original(nums: &[i64]) -> i64 {
     // The function to minimize is a sum of parabolas--almost. The fuel cost
     // for a crab at x0, in terms of x, is a function of `d = (x - x0).abs()`.
     // it is, specifically, the d'th triangle number, `d * (d + 1) / 2`. I
@@ -58,6 +58,91 @@ fn part_2(nums: &[i64]) -> i64 {
     }
 
     fuel_cost_at(lo)
+}
+
+#[aoc(day7, part2, parabolic)]
+fn part_2(nums: &[i64]) -> i64 {
+    let mut nums = nums.to_vec();
+    nums.sort_unstable();
+
+    // The function to minimize is a sum of parabolas--almost. The fuel cost
+    // for a crab at xᵢ, in terms of its destination x, is a function of the
+    // distance traveled, `d = (x - xᵢ).abs()`. It is, specifically, the d'th
+    // triangle number, `d * (d + 1) / 2`. However, the `.abs()` is a bit of a
+    // problem; we have
+    //
+    //     fᵢ(x) = (x - xᵢ) * (x - xᵢ - 1) / 2   if x < xᵢ
+    //             (x - xᵢ) * (x - xᵢ + 1) / 2   otherwise
+    //
+    // and the goal is to find the minimum of the function `f` that is the sum
+    // of all N of these weirdos.
+    //
+    // But between any two crabs, the sum of all these functions is indeed just
+    // a parabola. Each individual region is very easy to solve -- the vertex
+    // of a parabola is at x coordinate `-b/2a`.
+
+    // First recast the parabolas into standard form.
+    //
+    //     fᵢ(x) = 1/2 * x² + (-xᵢ - 1/2) * x + (xᵢ * (xᵢ + 1) / 2)   if x ≤ xᵢ
+    //             1/2 * x² + (-xᵢ + 1/2) * x + (xᵢ * (xᵢ - 1) / 2)   otherwise
+    //
+    // Ugh, division by 2. Let's double all coefficients--it won't affect the x
+    // coordinate of the minimum point--and then we must remember to divide the
+    // answer by 2 at each `return`.
+    //
+    //     fᵢ(x) = x² + (-2xᵢ - 1) * x + (xᵢ * (xᵢ + 1))   if x ≤ xᵢ
+    //             x² + (-2xᵢ + 1) * x + (xᵢ * (xᵢ - 1))   otherwise
+    //
+    // We can scan the list from left to right, examining each parabolic slice.
+    // For the leftmost slice, x ≤ xᵢ will be true for all i, so we have these
+    // coefficients which describe that slice:
+    let mut a = 0;
+    let mut b = 0;
+    let mut c = 0;
+    for &xi in &nums {
+        a += 1;
+        b += -2 * xi - 1;
+        c += xi * (xi + 1);
+    }
+
+    /// Find the value of x that minimizes the value of ax² + bx.
+    ///
+    /// That's a parabola with vertex at -b/2a. But the vertex may have a
+    /// fractional part. Which of the 2 nearest integers has the minimum y
+    /// value? Fortunately, it's whichever point is closer to the vertex --
+    /// that is, we can just round to the nearest integer.
+    fn xmin(a: i64, b: i64) -> i64 {
+        debug_assert!(a > 0, "parabola must open upward");
+        debug_assert!(-b >= 0, "negacrabs?! sorry, code will round incorrectly");
+        (-b + a) / (2 * a)
+    }
+
+    // The vertex is at -b/2a.
+    let vx = xmin(a, b);
+    if vx <= nums[0] {
+        return (a * vx * vx + b * vx + c) / 2;
+    }
+
+    let mut left = nums[0];
+    for &right in &nums[1..] {
+        // OK, move on to the next segment. In this segment, where we once had x ≤ xᵢ,
+        // now that is no longer the case, so we must adjust our summary (a, b, c) of f
+        // to account for fᵢ tipping into the right-hand region.
+        b += 2;
+        c -= 2 * left;
+        let vx = xmin(a, b).max(left);
+        if vx <= right {
+            return (a * vx * vx + b * vx + c) / 2;
+        }
+
+        left = right;
+    }
+
+    // Last segment.
+    b += 2;
+    c -= 2 * left;
+    let vx = xmin(a, b).max(left);
+    (a * vx * vx + b * vx + c) / 2
 }
 
 #[cfg(test)]
