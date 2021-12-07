@@ -41,10 +41,11 @@ fn find_minimum<F: Fn(i64) -> i64>(mut lo: i64, mut hi: i64, f: F) -> i64 {
 
 #[aoc(day7, part1, binary_search)]
 fn part_1_binary_search(nums: &[i64]) -> i64 {
+    let fuel_cost = |x: i64| -> i64 { nums.iter().map(|&xi| (x - xi).abs()).sum() };
     let lo = nums.iter().copied().min().unwrap();
     let hi = nums.iter().copied().max().unwrap() + 1;
-    let x = find_minimum(lo, hi, |x| nums.iter().map(|&xi| (x - xi).abs()).sum());
-    nums.iter().map(|&xi| (x - xi).abs()).sum()
+    let x = find_minimum(lo, hi, fuel_cost);
+    fuel_cost(x)
 }
 
 #[aoc(day7, part2, binary_search)]
