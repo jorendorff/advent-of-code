@@ -1,6 +1,7 @@
 use aoc_runner_derive::*;
 
-#[aoc_generator(dayX)]
+#[aoc_generator(dayX, part1, jorendorff)]
+#[aoc_generator(dayX, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Vec<()>> {
     text.lines()
         .map(|line| {
@@ -9,12 +10,12 @@ fn parse_input(text: &str) -> anyhow::Result<Vec<()>> {
         .collect()
 }
 
-#[aoc(dayX, part1)]
+#[aoc(dayX, part1, jorendorff)]
 fn part_1() -> u64 {
     todo!();
 }
 
-#[aoc(dayX, part2)]
+#[aoc(dayX, part2, jorendorff)]
 fn part_2() -> u64 {
     todo!();
 }

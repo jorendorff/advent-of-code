@@ -1,17 +1,21 @@
 use aoc_runner_derive::*;
 
-#[aoc_generator(day7)]
+#[aoc_generator(day7, part1, jorendorff)]
+#[aoc_generator(day7, part1, jorendorff_binary_search)]
+#[aoc_generator(day7, part2, jorendorff_binary_search)]
+#[aoc_generator(day7, part2, jorendorff_parabolic)]
 fn parse_input(text: &str) -> Result<Vec<i64>, std::num::ParseIntError> {
     text.split(',')
         .map(|num| num.trim().parse::<i64>())
         .collect()
 }
 
-#[aoc(day7, part1, median)]
+#[aoc(day7, part1, jorendorff)]
 fn part_1(nums: &[i64]) -> i64 {
     let n = nums.len();
     let mut nums = nums.to_vec();
-    *nums.select_nth_unstable(n / 2).1
+    let x = *nums.select_nth_unstable(n / 2).1;
+    nums.iter().map(|&xi| (x - xi).abs()).sum()
 }
 
 // Given a U-shaped function `f`, find any coordinate x in the range `lo..hi`
@@ -28,28 +32,26 @@ fn find_minimum<F: Fn(i64) -> i64>(mut lo: i64, mut hi: i64, f: F) -> i64 {
         if fxp1 < fx {
             lo = mid + 1;
         } else if fxp1 == fx {
-            break;
+            return mid;
+        } else if f(mid - 1) < fx {
+            hi = mid;
         } else {
-            let fxm1 = f(mid - 1);
-            if fxm1 < fx {
-                hi = mid;
-            } else {
-                break;
-            }
+            return mid;
         }
     }
     lo
 }
 
-#[aoc(day7, part1, binary_search)]
+#[aoc(day7, part1, jorendorff_binary_search)]
 fn part_1_binary_search(nums: &[i64]) -> i64 {
+    let fuel_cost = |x: i64| -> i64 { nums.iter().map(|&xi| (x - xi).abs()).sum() };
     let lo = nums.iter().copied().min().unwrap();
     let hi = nums.iter().copied().max().unwrap() + 1;
-    let x = find_minimum(lo, hi, |x| nums.iter().map(|&xi| (x - xi).abs()).sum());
-    nums.iter().map(|&xi| (x - xi).abs()).sum()
+    let x = find_minimum(lo, hi, fuel_cost);
+    fuel_cost(x)
 }
 
-#[aoc(day7, part2, binary_search)]
+#[aoc(day7, part2, jorendorff_binary_search)]
 fn part_2_binary_search(nums: &[i64]) -> i64 {
     // The fuel cost for a crab at x0, in terms of x, is a function of the
     // distance traveled, `d = (x - x0).abs()`. It is, specifically, the d'th
@@ -69,7 +71,7 @@ fn part_2_binary_search(nums: &[i64]) -> i64 {
     fuel_cost_at(find_minimum(lo, hi, fuel_cost_at))
 }
 
-#[aoc(day7, part2, parabolic)]
+#[aoc(day7, part2, jorendorff_parabolic)]
 fn part_2(nums: &[i64]) -> i64 {
     let mut nums = nums.to_vec();
     nums.sort_unstable();
@@ -161,6 +163,37 @@ mod tests {
     const EXAMPLE: &str = "\
 16,1,2,0,4,2,7,1,2,14
 ";
+
+    #[test]
+    fn test_find_minimum() {
+        // exhaustively construct all reasonably small test cases
+        for x_min_left in 0..16 {
+            for x_min_right in x_min_left..=(x_min_left + 2) {
+                for right in x_min_right..=(x_min_right + 16) {
+                    let f = move |x| {
+                        if x < x_min_left {
+                            x_min_left - x
+                        } else if x <= x_min_right {
+                            0
+                        } else {
+                            x - x_min_right
+                        }
+                    };
+                    let x_min = find_minimum(0, right, f);
+                    assert!(
+                        x_min_left <= x_min && x_min <= x_min_right,
+                        "failed test case (x_min_left={}, x_min_right={}, right={}); expected {}..={}, got x_min={}",
+                        x_min_left,
+                        x_min_right,
+                        right,
+                        x_min_left,
+                        x_min_right,
+                        x_min,
+                    );
+                }
+            }
+        }
+    }
 
     #[test]
     fn test_part_1() {

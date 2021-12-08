@@ -2,7 +2,8 @@ use aoc_runner_derive::*;
 
 const TIMER_LIMIT: usize = 9;
 
-#[aoc_generator(day6)]
+#[aoc_generator(day6, part1, jorendorff)]
+#[aoc_generator(day6, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Vec<u64>> {
     let mut results = vec![0; TIMER_LIMIT];
     for line in text.trim().split(',') {
@@ -22,12 +23,12 @@ fn solve(ndays: usize, fish: &[u64]) -> u64 {
     fish.into_iter().sum()
 }
 
-#[aoc(day6, part1)]
+#[aoc(day6, part1, jorendorff)]
 fn part_1(fish: &[u64]) -> u64 {
     solve(80, fish)
 }
 
-#[aoc(day6, part2)]
+#[aoc(day6, part2, jorendorff)]
 fn part_2(fish: &[u64]) -> u64 {
     solve(256, fish)
 }
