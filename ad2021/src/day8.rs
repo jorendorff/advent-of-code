@@ -91,12 +91,13 @@ impl FromStr for Entry {
     }
 }
 
-#[aoc_generator(day8)]
+#[aoc_generator(day8, part1, jorendorff)]
+#[aoc_generator(day8, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Vec<Entry>> {
     text.lines().map(|line| line.parse::<Entry>()).collect()
 }
 
-#[aoc(day8, part1)]
+#[aoc(day8, part1, jorendorff)]
 fn part_1(entries: &[Entry]) -> usize {
     entries
         .iter()
@@ -119,6 +120,7 @@ impl PatternSet {
     }
 }
 
+#[allow(clippy::many_single_char_names)]
 fn decode(entry: &Entry, good_patterns: &PatternSet) -> anyhow::Result<u64> {
     // Brute force. 7! is 5040.
     for v in (0..7).permutations(7) {
@@ -147,7 +149,7 @@ fn decode(entry: &Entry, good_patterns: &PatternSet) -> anyhow::Result<u64> {
     anyhow::bail!("no solution found");
 }
 
-#[aoc(day8, part2)]
+#[aoc(day8, part2, jorendorff)]
 fn part_2(entries: &[Entry]) -> anyhow::Result<u64> {
     // A bitset with 10 bits set, one for each good pattern.
     let good_patterns = PatternSet::new(
