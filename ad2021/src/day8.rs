@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use std::str::FromStr;
 
 use aoc_runner_derive::*;
@@ -41,6 +42,10 @@ impl Pattern {
             0b1101111 => 9,
             _ => panic!("can't read digit: Pattern({:b})", self.0),
         }
+    }
+
+    fn bit(self) -> u128 {
+        1 << self.0
     }
 }
 
@@ -100,31 +105,43 @@ fn part_1(entries: &[Entry]) -> usize {
         .count()
 }
 
-fn bitset(patterns: &[Pattern]) -> u128 {
-    patterns.iter().map(|p| 1u128 << p.0).sum()
+/// There are exactly 2^7 == 128 different Patterns, so a bitset of Patterns
+/// fits in a u128.
+struct PatternSet(u128);
+
+impl PatternSet {
+    fn new(patterns: &[Pattern]) -> Self {
+        Self(patterns.iter().map(|p| p.bit()).sum())
+    }
+
+    fn contains(&self, p: Pattern) -> bool {
+        p.bit() & self.0 != 0
+    }
 }
 
-fn decode(entry: &Entry, good_patterns: u128) -> anyhow::Result<u64> {
-    // Brute force. 7^7 is 823,543. (10^10 would be too much.)
-    for (a, b, c, d, e, f, g) in itertools::iproduct!(0..7, 0..7, 0..7, 0..7, 0..7, 0..7, 0..7) {
-        if (1 << a) | (1 << b) | (1 << c) | (1 << d) | (1 << e) | (1 << f) | (1 << g) == 0b0111_1111
+fn decode(entry: &Entry, good_patterns: &PatternSet) -> anyhow::Result<u64> {
+    // Brute force. 7! is 5040.
+    for v in (0..7).permutations(7) {
+        let [a, b, c, d, e, f, g]: [u32; 7] = v.try_into().expect("failed to unpack permutation");
+
+        let permute = move |p: Pattern| -> Pattern {
+            Pattern(
+                (0..7)
+                    .zip([a, b, c, d, e, f, g])
+                    .map(|(i, j)| if p.0 & (1 << i) != 0 { 1 << j } else { 0 })
+                    .sum(),
+            )
+        };
+        if entry
+            .patterns
+            .iter()
+            .all(|p| good_patterns.contains(permute(*p)))
         {
-            // All values distinct makes a permutation.
-            let permute = move |p: Pattern| -> Pattern {
-                Pattern(
-                    (0..7)
-                        .zip([a, b, c, d, e, f, g])
-                        .map(|(i, j)| if p.0 & (1 << i) != 0 { 1 << j } else { 0 })
-                        .sum(),
-                )
-            };
-            if bitset(&entry.patterns.map(permute)) == good_patterns {
-                return Ok(entry
-                    .output_value
-                    .iter()
-                    .map(|p| permute(*p).read())
-                    .fold(0, |acc, digit| acc * 10 + digit));
-            }
+            return Ok(entry
+                .output_value
+                .iter()
+                .map(|p| permute(*p).read())
+                .fold(0, |acc, digit| acc * 10 + digit));
         }
     }
     anyhow::bail!("no solution found");
@@ -132,15 +149,17 @@ fn decode(entry: &Entry, good_patterns: u128) -> anyhow::Result<u64> {
 
 #[aoc(day8, part2)]
 fn part_2(entries: &[Entry]) -> anyhow::Result<u64> {
-    let good_patterns = GOOD_PATTERN_STRS
-        .iter()
-        .map(|s| Pattern::from_str(*s))
-        .collect::<anyhow::Result<Vec<Pattern>>>()?;
-    let good_patterns = bitset(&good_patterns);
+    // A bitset with 10 bits set, one for each good pattern.
+    let good_patterns = PatternSet::new(
+        &GOOD_PATTERN_STRS
+            .iter()
+            .map(|s| Pattern::from_str(*s))
+            .collect::<anyhow::Result<Vec<Pattern>>>()?,
+    );
 
     Ok(entries
         .iter()
-        .map(|e| decode(e, good_patterns))
+        .map(|e| decode(e, &good_patterns))
         .collect::<anyhow::Result<Vec<u64>>>()?
         .into_iter()
         .sum())
