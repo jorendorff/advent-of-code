@@ -31,12 +31,8 @@ impl Line {
         points
     }
 
-    fn rect_points(&self) -> Vec<(usize, usize)> {
-        if self.x1 == self.x2 || self.y1 == self.y2 {
-            self.points()
-        } else {
-            vec![]
-        }
+    fn is_rectilinear(&self) -> bool {
+        self.x1 == self.x2 || self.y1 == self.y2
     }
 }
 
@@ -62,7 +58,8 @@ fn parse_input(text: &str) -> anyhow::Result<Vec<Line>> {
 fn part_1(lines: &[Line]) -> usize {
     lines
         .iter()
-        .flat_map(Line::rect_points)
+        .filter(|line| line.is_rectilinear())
+        .flat_map(Line::points)
         .counts()
         .into_iter()
         .filter(|(_key, count)| *count > 1)
