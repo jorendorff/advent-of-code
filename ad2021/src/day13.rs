@@ -61,9 +61,9 @@ fn part_2((points, insns): &(Vec<(i32, i32)>, Vec<Insn>)) -> String {
     let xmax = points.iter().map(|&(x, _y)| x).max().unwrap();
     let ymax = points.iter().map(|&(_x, y)| y).max().unwrap();
 
-    let mut grid = vec![vec!["  "; xmax as usize + 1]; ymax as usize + 1];
+    let mut grid = vec![vec!['.'; xmax as usize + 1]; ymax as usize + 1];
     for (x, y) in points {
-        grid[y as usize][x as usize] = "##";
+        grid[y as usize][x as usize] = '#';
     }
     let mut out = "\n".to_string();
     for row in grid {
@@ -110,11 +110,11 @@ fold along x=5
     #[test]
     fn test_part_2() {
         let expected = "
-##########
-##      ##
-##      ##
-##      ##
-##########
+#####
+#...#
+#...#
+#...#
+#####
 ";
         assert_eq!(part_2(&parse_input(EXAMPLE).unwrap()), expected);
     }
