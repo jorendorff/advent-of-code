@@ -56,7 +56,7 @@ fn part_1((points, insns): &(Vec<(i32, i32)>, Vec<Insn>)) -> usize {
 }
 
 #[aoc(day13, part2, jorendorff)]
-fn part_2((points, insns): &(Vec<(i32, i32)>, Vec<Insn>)) -> usize {
+fn part_2((points, insns): &(Vec<(i32, i32)>, Vec<Insn>)) -> String {
     let points: Vec<(i32, i32)> = fold(points, insns).collect();
     let xmax = points.iter().map(|&(x, _y)| x).max().unwrap();
     let ymax = points.iter().map(|&(_x, y)| y).max().unwrap();
@@ -65,11 +65,13 @@ fn part_2((points, insns): &(Vec<(i32, i32)>, Vec<Insn>)) -> usize {
     for (x, y) in points {
         grid[y as usize][x as usize] = "##";
     }
+    let mut out = "\n".to_string();
     for row in grid {
         let line: String = row.into_iter().collect();
-        println!("{}", line);
+        out += &line;
+        out.push('\n');
     }
-    0
+    out
 }
 
 #[cfg(test)]
@@ -105,8 +107,15 @@ fold along x=5
         assert_eq!(part_1(&parse_input(EXAMPLE).unwrap()), 17);
     }
 
-    //#[test]
-    //fn test_part_2() {
-    //    assert_eq!(part_2(&parse_input(EXAMPLE).unwrap()), ());
-    //}
+    #[test]
+    fn test_part_2() {
+        let expected = "
+##########
+##      ##
+##      ##
+##      ##
+##########
+";
+        assert_eq!(part_2(&parse_input(EXAMPLE).unwrap()), expected);
+    }
 }
