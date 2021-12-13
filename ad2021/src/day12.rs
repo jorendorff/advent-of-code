@@ -6,6 +6,7 @@ const START: usize = 0;
 const END: usize = 1;
 
 struct Room {
+    #[allow(dead_code)]
     name: String,
     large: bool,
     adj: Vec<usize>,
