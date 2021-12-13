@@ -1,74 +1,15 @@
 use aoc_runner_derive::*;
-
-#[derive(Clone)]
-struct Grid {
-    grid: Vec<Vec<bool>>,
-}
+use itertools::Itertools;
 
 #[derive(Copy, Clone)]
 enum Insn {
-    FoldX(usize),
-    FoldY(usize),
-}
-
-impl Grid {
-    fn fold_y(&mut self, y: usize) {
-        assert!(y < self.grid.len());
-        let folded_rows = self.grid.split_off(y + 1);
-        self.grid.pop();
-        if folded_rows.len() > self.grid.len() {
-            panic!();
-        }
-
-        for (erow, frow) in self.grid.iter_mut().rev().zip(folded_rows.into_iter()) {
-            for (e, f) in erow.iter_mut().zip(frow) {
-                *e |= f;
-            }
-        }
-    }
-
-    fn transpose(&mut self) {
-        let w = self.grid[0].len();
-        self.grid = (0..w)
-            .map(|x| self.grid.iter().map(|row| row[x]).collect())
-            .collect();
-    }
-
-    fn fold_x(&mut self, x: usize) {
-        self.transpose();
-        self.fold_y(x);
-        self.transpose();
-    }
-
-    fn carry_out(&mut self, insn: Insn) {
-        match insn {
-            Insn::FoldX(x) => self.fold_x(x),
-            Insn::FoldY(y) => self.fold_y(y),
-        }
-    }
-
-    fn count_ones(&self) -> usize {
-        self.grid
-            .iter()
-            .flat_map(|row| row.iter().filter(|cell| **cell))
-            .count()
-    }
-
-    fn dump(&self) {
-        for row in &self.grid {
-            println!(
-                "{}",
-                row.iter()
-                    .map(|&x| if x { '#' } else { '.' })
-                    .collect::<String>()
-            );
-        }
-    }
+    FoldX(i32),
+    FoldY(i32),
 }
 
 #[aoc_generator(day13, part1, jorendorff)]
 #[aoc_generator(day13, part2, jorendorff)]
-fn parse_input(text: &str) -> anyhow::Result<(Grid, Vec<Insn>)> {
+fn parse_input(text: &str) -> anyhow::Result<(Vec<(i32, i32)>, Vec<Insn>)> {
     let sections: Vec<&str> = text.split("\n\n").collect();
 
     anyhow::ensure!(sections.len() == 2);
@@ -78,17 +19,9 @@ fn parse_input(text: &str) -> anyhow::Result<(Grid, Vec<Insn>)> {
         .map(|line| {
             let coords: Vec<&str> = line.split(',').collect();
             anyhow::ensure!(coords.len() == 2, "bad point {:?}", line);
-            Ok((coords[0].parse::<usize>()?, coords[1].parse::<usize>()?))
+            Ok((coords[0].parse::<i32>()?, coords[1].parse::<i32>()?))
         })
-        .collect::<anyhow::Result<Vec<(usize, usize)>>>()?;
-
-    let xmax = points.iter().map(|&(x, _y)| x).max().unwrap();
-    let ymax = points.iter().map(|&(_x, y)| y).max().unwrap();
-
-    let mut grid = vec![vec![false; xmax + 1]; ymax + 1];
-    for (x, y) in points {
-        grid[y][x] = true;
-    }
+        .collect::<anyhow::Result<Vec<(i32, i32)>>>()?;
 
     let insns = sections[1]
         .lines()
@@ -96,7 +29,7 @@ fn parse_input(text: &str) -> anyhow::Result<(Grid, Vec<Insn>)> {
             anyhow::ensure!(line.starts_with("fold along "));
             let parts: Vec<&str> = line.split('=').collect();
             anyhow::ensure!(parts.len() == 2);
-            let coord = parts[1].parse::<usize>()?;
+            let coord = parts[1].parse::<i32>()?;
             if parts[0].ends_with('x') {
                 Ok(Insn::FoldX(coord))
             } else {
@@ -105,25 +38,38 @@ fn parse_input(text: &str) -> anyhow::Result<(Grid, Vec<Insn>)> {
         })
         .collect::<anyhow::Result<Vec<Insn>>>()?;
 
-    Ok((Grid { grid }, insns))
+    Ok((points, insns))
+}
+
+fn fold<'a>(points: &'a [(i32, i32)], insns: &'a [Insn]) -> impl Iterator<Item = (i32, i32)> + 'a {
+    points.iter().cloned().map(|p| {
+        insns.iter().fold(p, |(x, y), &insn| match insn {
+            Insn::FoldX(fx) => (if x > fx { 2 * fx - x } else { x }, y),
+            Insn::FoldY(fy) => (x, if y > fy { 2 * fy - y } else { y }),
+        })
+    })
 }
 
 #[aoc(day13, part1, jorendorff)]
-fn part_1((grid, insns): &(Grid, Vec<Insn>)) -> usize {
-    let mut grid = grid.clone();
-    grid.carry_out(insns[0]);
-    grid.count_ones()
+fn part_1((points, insns): &(Vec<(i32, i32)>, Vec<Insn>)) -> usize {
+    fold(points, &insns[..1]).unique().count()
 }
 
 #[aoc(day13, part2, jorendorff)]
-fn part_2((grid, insns): &(Grid, Vec<Insn>)) -> &'static str {
-    let mut grid = grid.clone();
-    for insn in insns {
-        grid.carry_out(*insn);
-    }
-    grid.dump();
+fn part_2((points, insns): &(Vec<(i32, i32)>, Vec<Insn>)) -> usize {
+    let points: Vec<(i32, i32)> = fold(points, insns).collect();
+    let xmax = points.iter().map(|&(x, _y)| x).max().unwrap();
+    let ymax = points.iter().map(|&(_x, y)| y).max().unwrap();
 
-    "ok"
+    let mut grid = vec![vec!["  "; xmax as usize + 1]; ymax as usize + 1];
+    for (x, y) in points {
+        grid[y as usize][x as usize] = "##";
+    }
+    for row in grid {
+        let line: String = row.into_iter().collect();
+        println!("{}", line);
+    }
+    0
 }
 
 #[cfg(test)]
