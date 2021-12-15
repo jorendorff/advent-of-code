@@ -82,12 +82,6 @@ fn part_2(input: &Input) -> u32 {
             })
         })
         .collect();
-    for r in expanded_cave.iter() {
-        println!(
-            "{}",
-            r.iter().map(|&b| (b'0' + b) as char).collect::<String>()
-        );
-    }
     part_1(&expanded_cave)
 }
 
