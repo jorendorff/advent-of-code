@@ -2,6 +2,46 @@ use aoc_runner_derive::*;
 
 type Input = Vec<Vec<u8>>;
 
+type Cost = u32;
+
+struct PriorityQueue<T> {
+    data: Vec<Vec<T>>,
+    current: Cost,
+}
+
+const STEP_COST_LIMIT: Cost = 16;
+
+impl<T> PriorityQueue<T> {
+    fn new() -> Self {
+        Self {
+            data: (0..STEP_COST_LIMIT).map(|_| vec![]).collect(),
+            current: 0,
+        }
+    }
+
+    fn push(&mut self, order: Cost, payload: T) {
+        debug_assert!(self.current <= order);
+        debug_assert!(order < self.current + 10);
+        self.data[(order % STEP_COST_LIMIT) as usize].push(payload);
+    }
+
+    fn pop(&mut self) -> Option<(Cost, T)> {
+        let current = self.current;
+        match self.data[(current % STEP_COST_LIMIT) as usize].pop() {
+            Some(value) => Some((current, value)),
+            None => {
+                for next in current + 1..current + 10 {
+                    if let Some(value) = self.data[(next % STEP_COST_LIMIT) as usize].pop() {
+                        self.current = next;
+                        return Some((next, value));
+                    }
+                }
+                None
+            }
+        }
+    }
+}
+
 #[aoc_generator(day15, part1, jorendorff)]
 #[aoc_generator(day15, part2, jorendorff)]
 fn parse_input(text: &str) -> Input {
@@ -11,10 +51,8 @@ fn parse_input(text: &str) -> Input {
 }
 
 #[aoc(day15, part1, jorendorff)]
-fn part_1(input: &Input) -> u32 {
-    use std::cmp::Reverse;
-    use std::collections::BinaryHeap;
-    type Heap = BinaryHeap<(Reverse<u32>, usize, usize)>;
+fn part_1(input: &Input) -> Cost {
+    type Heap = PriorityQueue<(usize, usize)>;
 
     let h = input.len();
     let w = input[0].len();
@@ -25,22 +63,22 @@ fn part_1(input: &Input) -> u32 {
 
     fn try_enter(
         input: &[Vec<u8>],
-        costs: &mut Vec<Vec<Option<u32>>>,
+        costs: &mut Vec<Vec<Option<Cost>>>,
         queue: &mut Heap,
         r: usize,
         c: usize,
-        current: u32,
+        current: Cost,
     ) {
-        if costs[r][c].is_none() {
-            let total = current + input[r][c] as u32;
+        let total = current + input[r][c] as Cost;
+        if costs[r][c].is_none() || total < costs[r][c].unwrap() {
             costs[r][c] = Some(total);
-            queue.push((Reverse(total), r, c));
+            queue.push(total, (r, c));
         }
     }
 
-    queue.push((Reverse(0), 0, 0));
+    queue.push(0, (0, 0));
     while costs[h - 1][w - 1].is_none() {
-        if let Some((Reverse(current), r, c)) = queue.pop() {
+        if let Some((current, (r, c))) = queue.pop() {
             if r > 0 {
                 try_enter(input, &mut costs, &mut queue, r - 1, c, current);
             }
