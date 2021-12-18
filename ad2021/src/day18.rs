@@ -25,30 +25,16 @@ impl Number {
 
     fn reduce(self) -> Self {
         let mut num = self;
-        while num.can_reduce_n(0) {
-            // println!("Reducing {:?}...", num);
+        loop {
             match num.try_explode(0) {
                 Ok((_lnum, exploded, _rnum)) => {
                     num = exploded;
                 }
                 Err(val) => {
                     num = val;
-                    assert!(num.split_once());
-                }
-            };
-        }
-        // println!("Reduced form: {:?}", num);
-        num
-    }
-
-    fn can_reduce_n(&self, depth: usize) -> bool {
-        match self {
-            &Self::Regular(n) => n >= 10,
-            Self::Pair(left, right) => {
-                if depth == 4 {
-                    true
-                } else {
-                    left.can_reduce_n(depth + 1) || right.can_reduce_n(depth + 1)
+                    if !num.split_once() {
+                        break num;
+                    }
                 }
             }
         }
