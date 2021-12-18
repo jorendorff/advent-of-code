@@ -24,34 +24,33 @@ impl Number {
     }
 
     fn reduce(&mut self) {
-        while self.try_explode(0).is_ok() || self.split_once() {}
+        self.try_explode(0);
+        while self.split_once() {
+            self.try_explode(0);
+        }
     }
 
     // Ok if successfully exploded, Err(self) unchanged if nothing was nested
     // deeply enough to explode.
-    fn try_explode(&mut self, depth: usize) -> Result<(Option<i64>, Option<i64>), ()> {
+    fn try_explode(&mut self, depth: usize) -> (i64, i64) {
         match self {
-            Number::Regular(_n) => Err(()),
+            Number::Regular(_n) => (0, 0),
             Number::Pair(left, right) if depth == 4 => {
                 let left = left.magnitude();
                 let right = right.magnitude();
                 *self = Number::Regular(0);
-                Ok((Some(left), Some(right)))
+                (left, right)
             }
             Number::Pair(left, right) => {
-                if let Ok((lnum, rnum)) = left.try_explode(depth + 1) {
-                    if let Some(n) = rnum {
-                        right.add_to_leftmost(n);
-                    }
-                    Ok((lnum, None))
-                } else if let Ok((lnum, rnum)) = right.try_explode(depth + 1) {
-                    if let Some(n) = lnum {
-                        left.add_to_rightmost(n);
-                    }
-                    Ok((None, rnum))
-                } else {
-                    Err(())
+                let (ll, lr) = left.try_explode(depth + 1);
+                if lr != 0 {
+                    right.add_to_leftmost(lr);
                 }
+                let (rl, rr) = right.try_explode(depth + 1);
+                if rl != 0 {
+                    left.add_to_rightmost(rl);
+                }
+                (ll, rr)
             }
         }
     }
