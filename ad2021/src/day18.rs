@@ -24,15 +24,15 @@ impl Number {
     }
 
     fn reduce(&mut self) {
-        self.try_explode(0);
+        self.explode(0);
         while self.split_once() {
-            self.try_explode(0);
+            self.explode(0);
         }
     }
 
     // Ok if successfully exploded, Err(self) unchanged if nothing was nested
     // deeply enough to explode.
-    fn try_explode(&mut self, depth: usize) -> (i64, i64) {
+    fn explode(&mut self, depth: usize) -> (i64, i64) {
         match self {
             Number::Regular(_n) => (0, 0),
             Number::Pair(left, right) if depth == 4 => {
@@ -42,11 +42,11 @@ impl Number {
                 (left, right)
             }
             Number::Pair(left, right) => {
-                let (ll, lr) = left.try_explode(depth + 1);
+                let (ll, lr) = left.explode(depth + 1);
                 if lr != 0 {
                     right.add_to_leftmost(lr);
                 }
-                let (rl, rr) = right.try_explode(depth + 1);
+                let (rl, rr) = right.explode(depth + 1);
                 if rl != 0 {
                     left.add_to_rightmost(rl);
                 }
