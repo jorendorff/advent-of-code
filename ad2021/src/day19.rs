@@ -103,7 +103,6 @@ fn try_placement(
             if shared_points >= min_overlap {
                 return Some(solution);
             } else {
-                println!("found {} shared points", shared_points);
                 return None;
             }
         }
@@ -153,8 +152,6 @@ fn try_place(
 // Returns the positions of beacons and the positions of scanners, relative to scanner 0.
 // The scanner positions come out in the order we find them, not sorted by scanner id.
 fn make_map(scans: &[Vec<Point>], min_overlap: usize) -> (HashSet<Point>, Vec<Point>) {
-    println!("----\nmake_map in, {} scans", scans.len());
-
     let origin: Point = vector![0, 0, 0, 1];
 
     let mut scanners = vec![origin];
