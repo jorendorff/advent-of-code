@@ -1,17 +1,17 @@
 use aoc_runner_derive::*;
 use std::collections::BTreeSet;
 
-use std::ops::RangeInclusive;
+use std::ops::Range;
 
 #[derive(Clone)]
 struct Cube {
     on: bool,
-    x: RangeInclusive<i32>,
-    y: RangeInclusive<i32>,
-    z: RangeInclusive<i32>,
+    x: Range<i32>,
+    y: Range<i32>,
+    z: Range<i32>,
 }
 
-fn parse_range(coord: &str, range: &str) -> anyhow::Result<RangeInclusive<i32>> {
+fn parse_range(coord: &str, range: &str) -> anyhow::Result<Range<i32>> {
     let (name, values) = range
         .split_once('=')
         .ok_or_else(|| anyhow::anyhow!("bad range {:?}", range))?;
@@ -19,7 +19,9 @@ fn parse_range(coord: &str, range: &str) -> anyhow::Result<RangeInclusive<i32>> 
     let (start, stop) = values
         .split_once("..")
         .ok_or_else(|| anyhow::anyhow!("bad range {:?}", range))?;
-    Ok(start.parse()?..=stop.parse()?)
+    // +1 because the puzzle specifies inclusive ranges; we convert to
+    // half-open ranges right away
+    Ok(start.parse::<i32>()?..stop.parse::<i32>()? + 1)
 }
 
 #[aoc_generator(day22, part1, jorendorff)]
@@ -51,9 +53,9 @@ fn parse_input(text: &str) -> anyhow::Result<Vec<Cube>> {
 fn part_1(cubes: &Vec<Cube>) -> u64 {
     let mut cubes = cubes.clone();
     for cube in &mut cubes {
-        cube.x = (*cube.x.start()).max(-50)..=(*cube.x.end()).min(50);
-        cube.y = (*cube.y.start()).max(-50)..=(*cube.y.end()).min(50);
-        cube.z = (*cube.z.start()).max(-50)..=(*cube.z.end()).min(50);
+        cube.x = cube.x.start.max(-50)..cube.x.end.min(51);
+        cube.y = cube.y.start.max(-50)..cube.y.end.min(51);
+        cube.z = cube.z.start.max(-50)..cube.z.end.min(51);
     }
     solve(&cubes)
 }
@@ -61,19 +63,19 @@ fn part_1(cubes: &Vec<Cube>) -> u64 {
 fn solve(cubes: &[Cube]) -> u64 {
     let xall = cubes
         .iter()
-        .flat_map(|cube| [*cube.x.start(), *cube.x.end() + 1])
+        .flat_map(|cube| [cube.x.start, cube.x.end])
         .collect::<BTreeSet<i32>>()
         .into_iter()
         .collect::<Vec<i32>>();
     let yall = cubes
         .iter()
-        .flat_map(|cube| [*cube.y.start(), *cube.y.end() + 1])
+        .flat_map(|cube| [cube.y.start, cube.y.end])
         .collect::<BTreeSet<i32>>()
         .into_iter()
         .collect::<Vec<i32>>();
     let zall = cubes
         .iter()
-        .flat_map(|cube| [*cube.z.start(), *cube.z.end() + 1])
+        .flat_map(|cube| [cube.z.start, cube.z.end])
         .collect::<BTreeSet<i32>>()
         .into_iter()
         .collect::<Vec<i32>>();
@@ -84,17 +86,15 @@ fn solve(cubes: &[Cube]) -> u64 {
 
     let mut bits = vec![false; z_dim * y_dim * x_dim];
 
+    let x_index = |x| xall.binary_search(&x).unwrap();
+    let y_index = |y| yall.binary_search(&y).unwrap();
+    let z_index = |z| zall.binary_search(&z).unwrap();
+
     for step in cubes {
         let value = step.on;
-        for z in zall.binary_search(step.z.start()).unwrap()
-            ..zall.binary_search(&(*step.z.end() + 1)).unwrap()
-        {
-            for y in yall.binary_search(step.y.start()).unwrap()
-                ..yall.binary_search(&(*step.y.end() + 1)).unwrap()
-            {
-                for x in xall.binary_search(step.x.start()).unwrap()
-                    ..xall.binary_search(&(*step.x.end() + 1)).unwrap()
-                {
+        for z in z_index(step.z.start)..z_index(step.z.end) {
+            for y in y_index(step.y.start)..y_index(step.y.end) {
+                for x in x_index(step.x.start)..x_index(step.x.end) {
                     bits[(z * y_dim + y) * x_dim + x] = value;
                 }
             }
