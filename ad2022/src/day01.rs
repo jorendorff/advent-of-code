@@ -46,16 +46,15 @@ mod tests {
 8000
 9000
 
-10000
-";
+10000";
 
     #[test]
     fn test_part_1() {
         assert_eq!(part_1(&parse_input(EXAMPLE).unwrap()), 24000);
     }
 
-    //     #[test]
-    //     fn test_part_2() {
-    //         assert_eq!(part_2(&parse_input(EXAMPLE).unwrap()), 5);
-    //     }
+    #[test]
+    fn test_part_2() {
+        assert_eq!(part_2(&parse_input(EXAMPLE).unwrap()), 45000);
+    }
 }
