@@ -1,7 +1,6 @@
 use aoc_parse::{parser, prelude::*};
 use aoc_runner_derive::*;
 
-/// Parse the puzzle input, which is just a series of numbers, one per line.
 #[aoc_generator(day1, part1, jorendorff)]
 #[aoc_generator(day1, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Vec<Vec<u64>>> {
