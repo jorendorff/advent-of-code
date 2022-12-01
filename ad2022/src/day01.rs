@@ -4,8 +4,8 @@ use aoc_runner_derive::*;
 #[aoc_generator(day1, part1, jorendorff)]
 #[aoc_generator(day1, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Vec<Vec<u64>>> {
-    let p = parser!(repeat_sep(repeat_sep(u64, "\n"), "\n\n"));
-    Ok(p.parse(text)?)
+    let p = parser!(repeat_sep(lines(u64), "\n"));
+    aoc_parse(text, p)
 }
 
 #[aoc(day1, part1, jorendorff)]
