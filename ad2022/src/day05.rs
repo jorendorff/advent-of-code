@@ -62,8 +62,6 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
         ))
         =>
         {
-            println!("{rows:?}");
-
             let mut stacks = vec![];
             stacks.resize(rows[0].len(), vec![]);
             for row in rows.iter().rev() {
