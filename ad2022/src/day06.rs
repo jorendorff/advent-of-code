@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use aoc_parse::{parser, prelude::*};
 use aoc_runner_derive::*;
 
@@ -12,36 +10,42 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
     aoc_parse(text, p)
 }
 
-#[aoc(day6, part1, jorendorff)]
-fn part_1(signal: &[char]) -> usize {
-    for (i, d) in signal.iter().copied().enumerate() {
-        if i >= 3 {
-            let a = signal[i - 3];
-            let b = signal[i - 2];
-            let c = signal[i - 1];
-            if a != b && a != c && a != d && b != c && b != d && c != d {
-                return i + 1;
+fn solve(chars: &[char], n: usize) -> usize {
+    let mut counts = [0usize; 128];
+    let mut nonzero = 0;
+    for (i, c) in chars.iter().copied().enumerate() {
+        let c = c as usize;
+        if c < 128 {
+            if counts[c] == 0 {
+                nonzero += 1;
+                if nonzero == n {
+                    return i + 1;
+                }
+            }
+            counts[c] += 1;
+        }
+
+        if i + 1 >= n {
+            let c = chars[i + 1 - n] as usize;
+            if c < 128 {
+                counts[c] -= 1;
+                if counts[c] == 0 {
+                    nonzero -= 1;
+                }
             }
         }
     }
-    panic!("no start-of-packet marker detected");
+    panic!("no match found");
+}
+
+#[aoc(day6, part1, jorendorff)]
+fn part_1(signal: &[char]) -> usize {
+    solve(signal, 4)
 }
 
 #[aoc(day6, part2, jorendorff)]
 fn part_2(signal: &[char]) -> usize {
-    for i in 1..=signal.len() {
-        if i >= 14
-            && signal[i - 14..i]
-                .iter()
-                .copied()
-                .collect::<HashSet<char>>()
-                .len()
-                == 14
-        {
-            return i;
-        }
-    }
-    panic!("no start-of-message marker detected");
+    solve(signal, 14)
 }
 
 #[cfg(test)]
