@@ -10,30 +10,36 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
     aoc_parse(text, p)
 }
 
+// Find the first slice of `n` consecutive characters in `chars` that are all
+// distinct. Returns the end of the slice range.
+//
+// This can panic if `chars` contains non-ascii characters.
 fn solve(chars: &[char], n: usize) -> usize {
-    let mut counts = [0usize; 128];
-    let mut nonzero = 0;
+    // counts[c] == number of times the character c occurs in the window
+    let mut counts = [0u8; 128];
+    // number of distinct characters in the window
+    let mut distinct = 0;
+
     for (i, c) in chars.iter().copied().enumerate() {
-        let c = c as usize;
-        if c < 128 {
-            if counts[c] == 0 {
-                nonzero += 1;
-                if nonzero == n {
-                    return i + 1;
-                }
+        if i >= n {
+            // window has n characters in it; remove trailing-edge character x
+            // to make room for the new character c
+            let x = chars[i - n] as usize;
+            counts[x] -= 1;
+            if counts[x] == 0 {
+                distinct -= 1;
             }
-            counts[c] += 1;
         }
 
-        if i + 1 >= n {
-            let c = chars[i + 1 - n] as usize;
-            if c < 128 {
-                counts[c] -= 1;
-                if counts[c] == 0 {
-                    nonzero -= 1;
-                }
+        // add new character to the window
+        let c = c as usize;
+        if counts[c] == 0 {
+            distinct += 1;
+            if distinct == n {
+                return i + 1;
             }
         }
+        counts[c] += 1;
     }
     panic!("no match found");
 }
