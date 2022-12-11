@@ -36,11 +36,11 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
     });
 
     let p = parser!(sections(
-        (i: line("Monkey " usize ":"))
-        (items: line("  Starting items: " repeat_sep(u64, ", ")))
-        (oper: line("  Operation: new = " operand ' ' op ' ' operand))
-        (test: line("  Test: divisible by " u64))
-        (if_true: line("    If true: throw to monkey " usize))
+        (i:        line("Monkey " usize ":"))
+        (items:    line("  Starting items: " repeat_sep(u64, ", ")))
+        (oper:     line("  Operation: new = " operand ' ' op ' ' operand))
+        (test:     line("  Test: divisible by " u64))
+        (if_true:  line("    If true: throw to monkey " usize))
         (if_false: line("    If false: throw to monkey " usize))
             => Monkey { i, items, oper, test, if_true, if_false }
     ));
