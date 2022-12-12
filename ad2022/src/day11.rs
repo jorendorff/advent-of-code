@@ -32,16 +32,16 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
 
     let operand = parser!({
         "old" => Operand::Old,
-        (x: u64) => Operand::Lit(x),
+        x:u64 => Operand::Lit(x),
     });
 
     let p = parser!(sections(
-        (i:        line("Monkey " usize ":"))
-        (items:    line("  Starting items: " repeat_sep(u64, ", ")))
-        (oper:     line("  Operation: new = " operand ' ' op ' ' operand))
-        (test:     line("  Test: divisible by " u64))
-        (if_true:  line("    If true: throw to monkey " usize))
-        (if_false: line("    If false: throw to monkey " usize))
+        i:        line("Monkey " usize ":")
+        items:    line("  Starting items: " repeat_sep(u64, ", "))
+        oper:     line("  Operation: new = " operand ' ' op ' ' operand)
+        test:     line("  Test: divisible by " u64)
+        if_true:  line("    If true: throw to monkey " usize)
+        if_false: line("    If false: throw to monkey " usize)
             => Monkey { i, items, oper, test, if_true, if_false }
     ));
     aoc_parse(text, p)
@@ -65,7 +65,7 @@ fn eval(oper: (Operand, Op, Operand), old: u64) -> u64 {
 
 #[aoc(day11, part1, jorendorff)]
 fn part_1(input: &Input) -> u64 {
-    assert!(input.iter().enumerate().all(|(i, monkey) | monkey.i == i));
+    assert!(input.iter().enumerate().all(|(i, monkey)| monkey.i == i));
 
     let mut monkeys = input.clone();
     let mut inspect_count = vec![0u64; monkeys.len()];

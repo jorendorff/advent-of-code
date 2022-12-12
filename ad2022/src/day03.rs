@@ -23,7 +23,7 @@ fn parse_input(text: &str) -> anyhow::Result<Vec<(u64, u64)>> {
     aoc_parse(
         text,
         parser!((
-            (chars: line(alpha+)) => {
+            chars:line(alpha+) => {
                 let n = chars.len();
                 assert_eq!(n % 2, 0, "line {:?} has an odd number of characters",
                            chars.into_iter().collect::<String>());

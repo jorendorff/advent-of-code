@@ -6,7 +6,7 @@ use aoc_runner_derive::*;
 #[aoc_generator(day4, part1, jorendorff)]
 #[aoc_generator(day4, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Vec<(Range<u64>, Range<u64>)>> {
-    let range = parser!((a:u64) "-" (b:u64) => a .. (b + 1));
+    let range = parser!(a:u64 "-" b:u64 => a..(b + 1));
     let p = parser!(lines(range "," range));
     aoc_parse(text, p)
 }

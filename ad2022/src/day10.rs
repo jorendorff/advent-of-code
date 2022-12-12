@@ -15,7 +15,7 @@ use Insn::*;
 fn parse_input(text: &str) -> anyhow::Result<Input> {
     let p = parser!(lines({
         "noop" => Noop,
-        "addx " (x:i64) => Addx(x),
+        "addx " x:i64 => Addx(x),
     }));
     aoc_parse(text, p)
 }

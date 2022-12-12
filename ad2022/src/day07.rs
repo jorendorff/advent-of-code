@@ -27,11 +27,11 @@ fn parse_input(text: &str) -> anyhow::Result<Vec<InputLine>> {
     let p = parser!({
         line("$ cd /") => CdRoot,
         line("$ cd ..") => CdUp,
-        (d: line ("$ cd " string(any_char+))) => Cd(d),
-        line("$ ls") (output: lines({
-            (size: u64) " " (name: string(any_char+)) => LsFile(name, size),
-            "dir " (name: string(any_char+)) => LsDir(name),
-        })) => Ls(output),
+        d: line("$ cd " string(any_char+)) => Cd(d),
+        line("$ ls") output:lines({
+            size:u64 " " name:string(any_char+) => LsFile(name, size),
+            "dir " name:string(any_char+) => LsDir(name),
+        }) => Ls(output),
     }*);
     aoc_parse(text, p)
 }

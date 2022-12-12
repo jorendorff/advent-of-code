@@ -45,21 +45,21 @@ struct Move {
 #[aoc_generator(day5, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Input> {
     let move_parser = parser!(
-        "move " (quantity: usize) " from " (source: usize) " to " (target: usize)
+        "move " quantity:usize " from " source:usize " to " target:usize
             =>
             Move { quantity, source: source - 1, target: target - 1 }
     );
 
     let model = parser!(
-        (rows: lines(
+        rows:lines(
             repeat_sep(
                 {
                     "   " => None,
-                    "[" (x:alpha) "]" => Some(x)
+                    "[" x:alpha "]" => Some(x),
                 },
                 " "
             )
-        ))
+        )
         =>
         {
             let mut stacks = vec![];
@@ -76,10 +76,10 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
     );
 
     let p = parser!(
-        (m: model)
+        m:model
         line(repeat_sep(" " digit " ", " "))
         line("")
-        (moves: lines(move_parser))
+        moves:lines(move_parser)
         =>
         {
             Input { model: m, moves }

@@ -6,7 +6,7 @@ type Input = Vec<Vec<i32>>;
 #[aoc_generator(day8, part1, jorendorff)]
 #[aoc_generator(day8, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Input> {
-    let p = parser!(lines(((a: digit) => a as i32)+));
+    let p = parser!(lines((a:digit => a as i32)+));
     aoc_parse(text, p)
 }
 
