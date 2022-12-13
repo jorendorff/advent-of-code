@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 
 use aoc_parse::{parser, prelude::*};
 use aoc_runner_derive::*;
