@@ -1,3 +1,5 @@
+#![allow(clippy::needless_range_loop, clippy::collapsible_if)]
+
 use std::collections::{HashMap, VecDeque};
 
 use aoc_parse::{parser, prelude::*};
