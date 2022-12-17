@@ -22,14 +22,14 @@ fn items(s: &[char]) -> u64 {
 fn parse_input(text: &str) -> anyhow::Result<Vec<(u64, u64)>> {
     aoc_parse(
         text,
-        parser!((
-            chars:line(alpha+) => {
+        parser!(lines(
+            chars:alpha+ => {
                 let n = chars.len();
                 assert_eq!(n % 2, 0, "line {:?} has an odd number of characters",
                            chars.into_iter().collect::<String>());
                 (items(&chars[..n / 2]), items(&chars[n / 2..]))
             }
-        )*),
+        )),
     )
 }
 

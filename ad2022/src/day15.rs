@@ -11,7 +11,7 @@ type Input = Vec<(Point, Point)>;
 fn parse_input(text: &str) -> anyhow::Result<Input> {
     let point = parser!("x=" i64 ", y=" i64);
     let p = parser!(lines(
-        "Sensor at " s:point ": closest beacon is at " b:point
+        "Sensor at " point ": closest beacon is at " point
     ));
     Ok(p.parse(text)?)
 }
