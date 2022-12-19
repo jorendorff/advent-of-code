@@ -88,9 +88,9 @@ fn part_2(input: &Input) -> usize {
                 (x, y, z + 1),
                 (x, y, z - 1),
             ]
-                .into_iter()
-                .filter(|p| exterior.contains(p))
-                .count()
+            .into_iter()
+            .filter(|p| exterior.contains(p))
+            .count()
         })
         .sum()
 }
