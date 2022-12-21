@@ -195,8 +195,6 @@ fn part_2(input: &Input) -> Ratio {
     }
     let diff: Polynomial = what2(&mut h, "root");
 
-    println!("{diff:?}");
-    
     for deg in diff.coeffs.keys() {
         assert!(*deg == 0 || *deg == 1);
     }
