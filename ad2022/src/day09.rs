@@ -17,7 +17,7 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
         }
         " " usize
     ));
-    aoc_parse(text, p)
+    Ok(p.parse(text)?)
 }
 
 #[allow(clippy::comparison_chain)]

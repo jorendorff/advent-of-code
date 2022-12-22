@@ -26,7 +26,7 @@ fn parse_input_1(text: &str) -> anyhow::Result<Vec<(Move, Move)>> {
         " "
         {"X" => Rock, "Y" => Paper, "Z" => Scissors}
     ));
-    aoc_parse(text, p)
+    Ok(p.parse(text)?)
 }
 
 fn score((m1, m2): (Move, Move)) -> u64 {
@@ -53,7 +53,7 @@ fn parse_input_2(text: &str) -> anyhow::Result<Vec<(Move, Goal)>> {
         " "
         {"X" => Lose, "Y" => Draw, "Z" => Win}
     ));
-    aoc_parse(text, p)
+    Ok(p.parse(text)?)
 }
 
 fn advice(opp: Move, goal: Goal) -> Move {

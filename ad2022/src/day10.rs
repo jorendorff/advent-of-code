@@ -17,7 +17,7 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
         "noop" => Noop,
         "addx " x:i64 => Addx(x),
     }));
-    aoc_parse(text, p)
+    Ok(p.parse(text)?)
 }
 
 fn is_interesting(cycle: i64) -> bool {

@@ -7,7 +7,7 @@ type Input = Vec<Vec<i32>>;
 #[aoc_generator(day8, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Input> {
     let p = parser!(lines((a:digit => a as i32)+));
-    aoc_parse(text, p)
+    Ok(p.parse(text)?)
 }
 
 fn mark_visible<Iter>(input: &[Vec<i32>], visible: &mut [Vec<usize>], iter: Iter)

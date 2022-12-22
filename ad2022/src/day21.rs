@@ -74,7 +74,7 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
         n:i64 => Rule::Num(n),
         a:name ' ' o:op ' ' b:name => Rule::Job(a, o, b),
     }));
-    aoc_parse(text, p)
+    Ok(p.parse(text)?)
 }
 
 fn what(rules: &mut HashMap<String, Rule>, target: &str) -> i64 {

@@ -7,7 +7,7 @@ type Input = Vec<char>;
 #[aoc_generator(day6, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Input> {
     let p = parser!(line(alpha+));
-    aoc_parse(text, p)
+    Ok(p.parse(text)?)
 }
 
 // Find the first slice of `n` consecutive characters in `chars` that are all

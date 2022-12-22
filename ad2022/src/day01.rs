@@ -5,7 +5,7 @@ use aoc_runner_derive::*;
 #[aoc_generator(day1, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Vec<Vec<u64>>> {
     let p = parser!(sections(lines(u64)));
-    aoc_parse(text, p)
+    Ok(p.parse(text)?)
 }
 
 #[aoc(day1, part1, jorendorff)]

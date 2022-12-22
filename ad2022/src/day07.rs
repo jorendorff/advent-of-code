@@ -33,7 +33,7 @@ fn parse_input(text: &str) -> anyhow::Result<Vec<InputLine>> {
             "dir " name:string(any_char+) => LsDir(name),
         }) => Ls(output),
     }*);
-    aoc_parse(text, p)
+    Ok(p.parse(text)?)
 }
 
 #[derive(Debug, Default)]

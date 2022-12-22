@@ -25,7 +25,7 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
             "Each geode robot costs " go:u64 " ore and " gb:u64 " obsidian."
             => Blueprint { id, oo, co, bo, bc, go, gb }
     ));
-    aoc_parse(text, p)
+    Ok(p.parse(text)?)
 }
 
 #[derive(Debug, Default, Clone)]

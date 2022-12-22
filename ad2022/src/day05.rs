@@ -85,7 +85,7 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
             Input { model: m, moves }
         }
     );
-    aoc_parse(text, p)
+    Ok(p.parse(text)?)
 }
 
 #[aoc(day5, part1, jorendorff)]

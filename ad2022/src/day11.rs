@@ -44,7 +44,7 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
         if_false: line("    If false: throw to monkey " usize)
             => Monkey { i, items, oper, test, if_true, if_false }
     ));
-    aoc_parse(text, p)
+    Ok(p.parse(text)?)
 }
 
 fn eval_operand(operand: Operand, old: u64) -> u64 {

@@ -12,7 +12,7 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
     let p = parser!(lines(
         repeat_sep(x:usize ',' y:usize => Point(x, y), " -> ")
     ));
-    aoc_parse(text, p)
+    Ok(p.parse(text)?)
 }
 
 const AIR: u8 = b'.';

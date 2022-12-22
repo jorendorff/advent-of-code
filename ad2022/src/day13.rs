@@ -88,7 +88,7 @@ fn parse_input_1(text: &str) -> anyhow::Result<Input1> {
         ',' => Comma,
     }+ => parse_list(&tokens));
     let p = parser!(sections(line(signal) line(signal)));
-    aoc_parse(text, p)
+    Ok(p.parse(text)?)
 }
 
 #[aoc_generator(day13, part2, jorendorff)]
@@ -101,7 +101,7 @@ fn parse_input_2(text: &str) -> anyhow::Result<Vec<Vec<Value>>> {
     }+ => parse_list(&tokens));
     let p =
         parser!(s:sections(lines(signal)) => s.into_iter().flatten().collect::<Vec<Vec<Value>>>());
-    aoc_parse(text, p)
+    Ok(p.parse(text)?)
 }
 
 #[aoc(day13, part1, jorendorff)]

@@ -9,7 +9,7 @@ type Input = Vec<(i64, i64, i64)>;
 #[aoc_generator(day18, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Input> {
     let p = parser!(lines(i64 ',' i64 ',' i64));
-    aoc_parse(text, p)
+    Ok(p.parse(text)?)
 }
 
 #[aoc(day18, part1, jorendorff)]

@@ -15,7 +15,7 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
         '<' => -1,
         '>' => 1,
     }+));
-    aoc_parse(text, p)
+    Ok(p.parse(text)?)
 }
 
 fn rocks() -> Vec<Vec<Vec<char>>> {

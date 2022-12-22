@@ -11,7 +11,7 @@ type Input = Vec<Vec<char>>;
 #[aoc_generator(day12, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Input> {
     let p = parser!(lines(alpha+));
-    aoc_parse(text, p)
+    Ok(p.parse(text)?)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

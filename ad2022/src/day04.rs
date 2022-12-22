@@ -8,7 +8,7 @@ use aoc_runner_derive::*;
 fn parse_input(text: &str) -> anyhow::Result<Vec<(Range<u64>, Range<u64>)>> {
     let range = parser!(a:u64 "-" b:u64 => a..(b + 1));
     let p = parser!(lines(range "," range));
-    aoc_parse(text, p)
+    Ok(p.parse(text)?)
 }
 
 fn contains(a: &Range<u64>, b: &Range<u64>) -> bool {
