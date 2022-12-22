@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::ops::{Add, Sub, Mul, Div, Neg};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 use num_bigint::BigInt;
 
@@ -80,7 +80,7 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
 fn what(rules: &mut HashMap<String, Rule>, target: &str) -> i64 {
     match &rules[target] {
         Rule::Num(n) => *n,
-        Rule::Job(left, op, right) =>{
+        Rule::Job(left, op, right) => {
             let left = left.to_string();
             let right = right.to_string();
             let op = *op;
@@ -154,9 +154,11 @@ impl Div for Polynomial {
         assert_eq!(other.coeffs.len(), 1);
         let (rdeg, rcoeff) = other.coeffs.into_iter().next().unwrap();
         Polynomial {
-            coeffs: self.coeffs.into_iter().map(move |(ldeg, lcoeff)| {
-                (ldeg - rdeg, lcoeff / rcoeff.clone())
-            }).collect(),
+            coeffs: self
+                .coeffs
+                .into_iter()
+                .map(move |(ldeg, lcoeff)| (ldeg - rdeg, lcoeff / rcoeff.clone()))
+                .collect(),
         }
     }
 }
@@ -169,7 +171,7 @@ fn what2(rules: &mut HashMap<String, Rule>, target: &str) -> Polynomial {
     match &rules[target] {
         Rule::Num(n) => Polynomial::constant(*n),
         Rule::Expr(x) => x.clone(),
-        Rule::Job(left, op, right) =>{
+        Rule::Job(left, op, right) => {
             let left = left.to_string();
             let right = right.to_string();
             let op = *op;
@@ -199,12 +201,19 @@ fn part_2(input: &Input) -> Ratio {
         assert!(*deg == 0 || *deg == 1);
     }
 
-    let c0 = diff.coeffs.get(&0).cloned().unwrap_or_else(|| Ratio::new(0.into(), 1.into()));
-    let c1 = diff.coeffs.get(&1).cloned().unwrap_or_else(|| Ratio::new(0.into(), 1.into()));
+    let c0 = diff
+        .coeffs
+        .get(&0)
+        .cloned()
+        .unwrap_or_else(|| Ratio::new(0.into(), 1.into()));
+    let c1 = diff
+        .coeffs
+        .get(&1)
+        .cloned()
+        .unwrap_or_else(|| Ratio::new(0.into(), 1.into()));
 
     -c0 / c1
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -235,6 +244,9 @@ hmdt: 32
 
     #[test]
     fn test_part_2() {
-        assert_eq!(part_2(&parse_input(EXAMPLE).unwrap()), Ratio::from(BigInt::from(301)));
+        assert_eq!(
+            part_2(&parse_input(EXAMPLE).unwrap()),
+            Ratio::from(BigInt::from(301))
+        );
     }
 }
