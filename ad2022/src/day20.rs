@@ -47,7 +47,9 @@ fn mix(input: &[i64], pos_to_id: &mut [usize], id_to_pos: &mut [usize]) {
         if dest < orig {
             assert_eq!(
                 vv,
-                saved_vv[0..dest].iter().cloned()
+                saved_vv[0..dest]
+                    .iter()
+                    .cloned()
                     .chain([input[id]].into_iter())
                     .chain(saved_vv[dest..orig].iter().cloned())
                     .chain(saved_vv[orig + 1..].iter().cloned())
@@ -56,7 +58,9 @@ fn mix(input: &[i64], pos_to_id: &mut [usize], id_to_pos: &mut [usize]) {
         } else {
             assert_eq!(
                 vv,
-                saved_vv[0..orig].iter().cloned()
+                saved_vv[0..orig]
+                    .iter()
+                    .cloned()
                     .chain(saved_vv[orig + 1..dest + 1].iter().cloned())
                     .chain([input[id]].into_iter())
                     .chain(saved_vv[dest + 1..].iter().cloned())
@@ -71,7 +75,7 @@ fn mix(input: &[i64], pos_to_id: &mut [usize], id_to_pos: &mut [usize]) {
 fn part_1(input: &Input) -> i64 {
     let zero_id = input.iter().copied().take_while(|&x| x != 0).count();
     let n = input.len();
-    
+
     let mut pos_to_id = (0..n).collect::<Vec<usize>>();
     let mut id_to_pos = pos_to_id.clone();
 
@@ -90,7 +94,7 @@ fn part_2(input: &Input) -> i64 {
 
     const KEY: i64 = 811589153;
     let input = input.iter().copied().map(|x| x * KEY).collect::<Vec<i64>>();
-    
+
     let mut pos_to_id = (0..n).collect::<Vec<usize>>();
     let mut id_to_pos = pos_to_id.clone();
 
@@ -102,7 +106,6 @@ fn part_2(input: &Input) -> i64 {
     input[pos_to_id[(p0 + 1000) % n]]
         + input[pos_to_id[(p0 + 2000) % n]]
         + input[pos_to_id[(p0 + 3000) % n]]
-
 }
 
 #[cfg(test)]
