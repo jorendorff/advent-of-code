@@ -1,13 +1,23 @@
+use std::collections::{HashMap, HashSet};
+
 use aoc_parse::{parser, prelude::*};
 use aoc_runner_derive::*;
 
-type Input = (Vec<Vec<usize>>, Vec<Insn>);
+type Input = (Vec<Vec<Square>>, Vec<Insn>);
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+enum Square {
+    Blank,
+    Open,
+    Wall,
+}
+use Square::*;
 
 #[derive(Debug)]
 enum Insn {
-    Go(u64),
     TurnLeft,
     TurnRight,
+    Go(u64),
 }
 use Insn::*;
 
@@ -15,11 +25,15 @@ use Insn::*;
 #[aoc_generator(day22, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Input> {
     let p = parser!(
-        section(lines(char_of(" .#")+))
+        section(lines({
+            ' ' => Blank,
+            '.' => Open,
+            '#' => Wall,
+        }+))
         line({
-            n:u64 => Go(n),
-            'R' => TurnRight,
             'L' => TurnLeft,
+            'R' => TurnRight,
+            n:u64 => Go(n),
         }+)
     );
     Ok(p.parse(text)?)
@@ -35,16 +49,18 @@ fn part_1(input: &Input) -> usize {
 
     for row in &mut grid {
         while row.len() < width {
-            row.push(0);
+            row.push(Blank);
         }
     }
 
     let mut y = 0;
-    let mut x = grid[0].iter().take_while(|c| **c != 1).count();
+    let mut x = grid[0].iter().take_while(|c| **c != Open).count();
     let mut h = Right;
 
     for insn in prog {
         match insn {
+            TurnLeft => h = h.turn_left(),
+            TurnRight => h = h.turn_right(),
             Go(n) => {
                 'zig: for _ in 0..*n {
                     let mut xx = x;
@@ -52,28 +68,32 @@ fn part_1(input: &Input) -> usize {
                     'step: loop {
                         xx = (xx as i64 + width as i64 + h.dx()) as usize % width;
                         yy = (yy as i64 + height as i64 + h.dy()) as usize % height;
-                        if grid[yy][xx] == 2 {
-                            // don't move
-                            break 'zig;
-                        } else if grid[yy][xx] == 1 {
-                            x = xx;
-                            y = yy;
-                            break 'step;
+                        match grid[yy][xx] {
+                            Wall => {
+                                // don't move
+                                break 'zig;
+                            }
+                            Open => {
+                                x = xx;
+                                y = yy;
+                                break 'step;
+                            }
+                            Blank => {
+                                // just keep going until we wrap around the edge
+                            }
                         }
                     }
                 }
             }
-            TurnLeft => h = h.turn_left(),
-            TurnRight => h = h.turn_right(),
         }
     }
     1000 * (y + 1) + 4 * (x + 1) + h.facing()
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 struct Panel(usize, usize);
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum Dir {
     Right = 0,
     Down = 1,
@@ -130,13 +150,84 @@ impl Dir {
         }
     }
 
+    fn flip(self) -> Dir {
+        self.turn_right().turn_right()
+    }
+
     fn facing(self) -> usize {
-        match self {
-            Right => 0,
-            Down => 1,
-            Left => 2,
-            Up => 3,
+        self as usize
+    }
+}
+
+struct CubeMap {
+    panels: HashSet<Panel>,
+    edges: HashMap<(Panel, Dir), (Panel, Dir)>,
+}
+
+impl CubeMap {
+    fn new() -> Self {
+        CubeMap {
+            panels: HashSet::new(),
+            edges: HashMap::new(),
         }
+    }
+
+    fn add(&mut self, (p1, d1): (Panel, Dir), (p2, d2): (Panel, Dir)) {
+        self.panels.insert(p1);
+        self.panels.insert(p2);
+        Self::add2(&mut self.edges, p1, d1, p2, d2);
+    }
+
+    fn add2(
+        edges: &mut HashMap<(Panel, Dir), (Panel, Dir)>,
+        p1: Panel,
+        d1: Dir,
+        p2: Panel,
+        d2: Dir,
+    ) {
+        let inserted = edges.insert((p1, d1), (p2, d2));
+        assert_eq!(inserted, None);
+        let inserted = edges.insert((p2, d2.flip()), (p1, d1.flip()));
+        assert_eq!(inserted, None);
+    }
+
+    fn finish(&mut self) {
+        // Fold up the cube. This code is neat!
+        assert_eq!(self.panels.len(), 6);
+        while self.edges.len() < 24 {
+            let mut progress = false;
+            for &origin in &self.panels {
+                for dir in [Right, Down, Left, Up] {
+                    if !self.edges.contains_key(&(origin, dir)) {
+                        // Try going to the right.
+                        if let Some(&(p, d)) = self
+                            .edges
+                            .get(&(origin, dir.turn_right()))
+                            .and_then(|&(p, d)| self.edges.get(&(p, d.turn_left())))
+                        {
+                            Self::add2(&mut self.edges, origin, dir, p, d.turn_right());
+                            progress = true;
+                            continue;
+                        }
+
+                        // Try going to the left.
+                        if let Some(&(p, d)) = self
+                            .edges
+                            .get(&(origin, dir.turn_left()))
+                            .and_then(|&(p, d)| self.edges.get(&(p, d.turn_right())))
+                        {
+                            Self::add2(&mut self.edges, origin, dir, p, d.turn_left());
+                            progress = true;
+                        }
+                    }
+                }
+            }
+            assert!(progress);
+        }
+    }
+
+    fn get(&self, before: (Panel, Dir)) -> (Panel, Dir) {
+        self.edges[&before]
     }
 }
 
@@ -148,130 +239,112 @@ fn part_2(input: &Input) -> usize {
     let width = grid.iter().map(Vec::len).max().unwrap();
     let height = grid.len();
 
+    // Cube size.
+    let cs = {
+        let area = grid
+            .iter()
+            .flat_map(|row| row.iter().filter(|x| **x != Blank))
+            .count();
+        assert_eq!(area % 6, 0);
+        let s = ((area / 6) as f64).sqrt() as usize;
+        assert_eq!(6 * s * s, area);
+        s
+    };
+    assert_eq!(height % cs, 0);
+    let height_panels = height / cs;
+    assert_eq!(width % cs, 0);
+    let width_panels = width / cs;
+
     for row in &mut grid {
         while row.len() < width {
-            row.push(0);
+            row.push(Blank);
         }
     }
 
+    let is_filled = |px: usize, py: usize| grid[py * cs][px * cs] != Blank;
+    let mut cube = CubeMap::new();
+    for px in 0..width_panels {
+        for py in 0..height_panels {
+            if is_filled(px, py) {
+                let p = Panel(px, py);
+                if px + 1 < width_panels && is_filled(px + 1, py) {
+                    cube.add((p, Right), (Panel(px + 1, py), Right));
+                }
+                if py + 1 < height_panels && is_filled(px, py + 1) {
+                    cube.add((p, Down), (Panel(px, py + 1), Down));
+                }
+            }
+        }
+    }
+    cube.finish();
+
     let mut y = 0;
-    let mut x = grid[0].iter().take_while(|c| **c != 1).count();
+    let mut x = grid[0].iter().take_while(|c| **c != Open).count();
     let mut h = Right;
-
-    //  BA
-    //  C
-    // ED
-    // F
-
-    const A: Panel = Panel(2, 0);
-    const B: Panel = Panel(1, 0);
-    const C: Panel = Panel(1, 1);
-    const D: Panel = Panel(1, 2);
-    const E: Panel = Panel(0, 2);
-    const F: Panel = Panel(0, 3);
-
-    // Cheating: explicitly enumerate all edges of the cube where we need to
-    // apply tape. This would not work for the example, only for my puzzle
-    // input (and not yours). But you can make a paper model and figure out a
-    // corresponding array that will work for you.
-    //
-    // Note that the last element of this 4-tuple needs to be the direction
-    // you'll be facing after teleporting to the appropriate spot on the edge,
-    // so if you arrive at the bottom edge of a panel, you'll be facing Up, and
-    // if you arrive at the right edge, you'll be facing Left.
-    //
-    // This contains two entries for each of the 12 edges of the cube, except
-    // for the 5 edges that are already adjacent in the puzzle input and thus
-    // don't require stitching. (12 - 5) * 2 == 14.
-    let stitches = vec![
-        // Panel A top edge = panel F bottom edge.
-        (A, Up, F, Up),
-        // Panel A right edge = panel D right edge.
-        (A, Right, D, Left),
-        // Panel A bottom edge = panel C right edge.
-        (A, Down, C, Left),
-        // Panel B top edge = panel F left edge.
-        (B, Up, F, Right),
-        // Panel B left edge = panel E left edge.
-        (B, Left, E, Right),
-        // Panel C left edge = panel E top edge.
-        (C, Left, E, Down),
-        // Panel C right edge = panel A bottom edge.
-        (C, Right, A, Up),
-        // Panel D right edge = panel A right edge.
-        (D, Right, A, Left),
-        // Panel D bottom edge = panel F right edge.
-        (D, Down, F, Left),
-        // Panel E top edge = panel C left edge.
-        (E, Up, C, Right),
-        // Panel E left edge = panel B left edge.
-        (E, Left, B, Right),
-        // Panel F right edge = panel D bottom edge.
-        (F, Right, D, Up),
-        // Panel F bottom edge = panel A top edge.
-        (F, Down, A, Down),
-        // Panel F left edge = panel B top edge
-        (F, Left, B, Down),
-    ];
-
     for insn in prog {
         match insn {
             TurnLeft => h = h.turn_left(),
             TurnRight => h = h.turn_right(),
             Go(n) => {
                 'zig: for _ in 0..*n {
-                    assert!(grid[y][x] == 1);
+                    assert_eq!(grid[y][x], Open);
 
-                    let xx = (x as i64 + width as i64 + h.dx()) as usize % width;
-                    let yy = (y as i64 + height as i64 + h.dy()) as usize % height;
-                    if grid[yy][xx] == 2 {
-                        // don't move
-                        break 'zig;
-                    } else if grid[yy][xx] == 1 {
-                        x = xx;
-                        y = yy;
+                    // The casts to usize here wrap to a huge value if x+dx or
+                    // y+dy goes negative. We need to know we left the panel.
+                    let xx = (x as i64 + h.dx()) as usize;
+                    let yy = (y as i64 + h.dy()) as usize;
+                    let sq = if xx >= width || yy >= height {
+                        Blank
                     } else {
-                        // We have wandered off the map! Perform stitching.
-                        assert_eq!(grid[yy][xx], 0);
-                        let old_panel = Panel(x / 50, y / 50);
-                        assert_ne!(
-                            old_panel,
-                            Panel(xx / 50, yy / 50),
-                            "we must have changed panels"
-                        );
+                        grid[yy][xx]
+                    };
 
-                        let mut stitched = false;
-                        for (origin_panel, dir, dest_panel, new_dir) in &stitches {
-                            if old_panel == *origin_panel && h == *dir {
-                                // We have found the right stitch.
-                                let slot = match h {
-                                    Right => y % 50,
-                                    Down => 49 - x % 50,
-                                    Left => 49 - y % 50,
-                                    Up => x % 50,
-                                };
-                                let (mut xx, mut yy) = match new_dir {
-                                    Right => (0, slot),
-                                    Down => (49 - slot, 0),
-                                    Left => (49, 49 - slot),
-                                    Up => (slot, 49),
-                                };
+                    match sq {
+                        Wall => {
+                            // don't move
+                            break 'zig;
+                        }
+                        Open => {
+                            x = xx;
+                            y = yy;
+                        }
+                        Blank => {
+                            // We have wandered off the map! Perform stitching.
+                            let old_panel = Panel(x / cs, y / cs);
+                            assert_ne!(
+                                old_panel,
+                                Panel(xx / cs, yy / cs),
+                                "we must have changed panels"
+                            );
 
-                                xx += 50 * dest_panel.0;
-                                yy += 50 * dest_panel.1;
-                                if grid[yy][xx] == 1 {
+                            let (dest_panel, new_dir) = cube.get((old_panel, h));
+
+                            let slot = match h {
+                                Right => y % cs,
+                                Down => (cs - 1) - x % cs,
+                                Left => (cs - 1) - y % cs,
+                                Up => x % cs,
+                            };
+                            let max = cs - 1;
+                            let (mut xx, mut yy) = match new_dir {
+                                Right => (0, slot),
+                                Down => (max - slot, 0),
+                                Left => (max, max - slot),
+                                Up => (slot, max),
+                            };
+
+                            xx += cs * dest_panel.0;
+                            yy += cs * dest_panel.1;
+                            match grid[yy][xx] {
+                                Open => {
                                     x = xx;
                                     y = yy;
-                                    h = *new_dir;
-                                } else {
-                                    assert_eq!(grid[yy][xx], 2);
-                                    break 'zig;
+                                    h = new_dir;
                                 }
-                                stitched = true;
-                                break;
+                                Wall => break 'zig,
+                                Blank => panic!("wrong turn in teleportation"),
                             }
                         }
-                        assert!(stitched);
                     }
                 }
             }
@@ -307,7 +380,6 @@ mod tests {
 
     #[test]
     fn test_part_2() {
-        // My implementation of part_2 won't work for the example!
-        //assert_eq!(part_2(&parse_input(EXAMPLE).unwrap()), 5031);
+        assert_eq!(part_2(&parse_input(EXAMPLE).unwrap()), 5031);
     }
 }
