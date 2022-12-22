@@ -1,5 +1,3 @@
-use std::collections::{HashMap, HashSet};
-
 use aoc_parse::{parser, prelude::*};
 use aoc_runner_derive::*;
 
@@ -91,9 +89,6 @@ fn part_1(input: &Input) -> usize {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-struct Panel(usize, usize);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum Dir {
     Right = 0,
     Down = 1,
@@ -159,75 +154,61 @@ impl Dir {
     }
 }
 
+type Panel = usize;
+
 struct CubeMap {
-    panels: HashSet<Panel>,
-    edges: HashMap<(Panel, Dir), (Panel, Dir)>,
+    edges: [[Option<(Panel, Dir)>; 4]; 6],
+    count: usize,
 }
 
 impl CubeMap {
     fn new() -> Self {
         CubeMap {
-            panels: HashSet::new(),
-            edges: HashMap::new(),
+            edges: [[None; 4]; 6],
+            count: 0,
         }
     }
 
-    fn add(&mut self, (p1, d1): (Panel, Dir), (p2, d2): (Panel, Dir)) {
-        self.panels.insert(p1);
-        self.panels.insert(p2);
-        Self::add2(&mut self.edges, p1, d1, p2, d2);
-    }
-
-    fn add2(
-        edges: &mut HashMap<(Panel, Dir), (Panel, Dir)>,
-        p1: Panel,
-        d1: Dir,
-        p2: Panel,
-        d2: Dir,
-    ) {
-        let inserted = edges.insert((p1, d1), (p2, d2));
-        assert_eq!(inserted, None);
-        let inserted = edges.insert((p2, d2.flip()), (p1, d1.flip()));
-        assert_eq!(inserted, None);
+    fn apply_tape(&mut self, (p1, d1): (Panel, Dir), (p2, d2): (Panel, Dir)) {
+        assert_eq!(self.edges[p1][d1 as usize], None);
+        self.edges[p1][d1 as usize] = Some((p2, d2));
+        assert_eq!(self.edges[p2][d2.flip() as usize], None);
+        self.edges[p2][d2.flip() as usize] = Some((p1, d1.flip()));
+        self.count += 1;
     }
 
     fn finish(&mut self) {
         // Fold up the cube. This code is neat!
-        assert_eq!(self.panels.len(), 6);
-        while self.edges.len() < 24 {
-            let mut progress = false;
-            for &origin in &self.panels {
+        while self.count < 12 {
+            let count_before = self.count;
+            for origin in 0..6 {
                 for dir in [Right, Down, Left, Up] {
-                    if !self.edges.contains_key(&(origin, dir)) {
-                        // Try going to the right.
-                        if let Some(&(p, d)) = self
-                            .edges
-                            .get(&(origin, dir.turn_right()))
-                            .and_then(|&(p, d)| self.edges.get(&(p, d.turn_left())))
+                    if self.edges[origin][dir as usize].is_none() {
+                        // Try folding in from the right.
+                        if let Some((p, d)) = self
+                            .edges[origin][dir.turn_right() as usize]
+                            .and_then(|(p, d)| self.edges[p][d.turn_left() as usize])
                         {
-                            Self::add2(&mut self.edges, origin, dir, p, d.turn_right());
-                            progress = true;
+                            self.apply_tape((origin, dir), (p, d.turn_right()));
                             continue;
                         }
 
-                        // Try going to the left.
-                        if let Some(&(p, d)) = self
-                            .edges
-                            .get(&(origin, dir.turn_left()))
-                            .and_then(|&(p, d)| self.edges.get(&(p, d.turn_right())))
+                        // Try folding in from the left.
+                        if let Some((p, d)) = self
+                            .edges[origin][dir.turn_left() as usize]
+                            .and_then(|(p, d)| self.edges[p][d.turn_right() as usize])
                         {
-                            Self::add2(&mut self.edges, origin, dir, p, d.turn_left());
-                            progress = true;
+                            self.apply_tape((origin, dir), (p, d.turn_left()));
                         }
                     }
                 }
             }
-            assert!(progress);
+            assert!(self.count > count_before, "progress");
         }
     }
 
-    fn get(&self, before: (Panel, Dir)) -> (Panel, Dir) {
-        self.edges[&before]
+    fn get(&self, (depart_panel, depart_dir): (Panel, Dir)) -> (Panel, Dir) {
+        self.edges[depart_panel][depart_dir as usize].unwrap()
     }
 }
 
@@ -238,6 +219,10 @@ fn part_2(input: &Input) -> usize {
     let mut grid = grid.clone();
     let width = grid.iter().map(Vec::len).max().unwrap();
     let height = grid.len();
+
+    for row in &mut grid {
+        row.resize(width, Blank);
+    }
 
     // Cube size.
     let cs = {
@@ -255,27 +240,34 @@ fn part_2(input: &Input) -> usize {
     assert_eq!(width % cs, 0);
     let width_panels = width / cs;
 
-    for row in &mut grid {
-        while row.len() < width {
-            row.push(Blank);
-        }
-    }
-
-    let is_filled = |px: usize, py: usize| grid[py * cs][px * cs] != Blank;
+    // Compute data used in teleportation.
+    // `panels` lists (x, y) coordinates of all faces of the cube
+    // coordinates are in panels (1/cs scale), not grid-squares
+    let mut panels = vec![];
+    // mini_map[y][x] = i whenever panels[i] == (x, y)
+    let mut mini_map = vec![vec![None; width_panels]; height_panels];
+    // `cube` tracks relationships between panels along edges
     let mut cube = CubeMap::new();
     for px in 0..width_panels {
         for py in 0..height_panels {
-            if is_filled(px, py) {
-                let p = Panel(px, py);
-                if px + 1 < width_panels && is_filled(px + 1, py) {
-                    cube.add((p, Right), (Panel(px + 1, py), Right));
+            if grid[py * cs][px * cs] != Blank {
+                let curr = panels.len();
+                if py > 0 {
+                    if let Some(prev) = mini_map[py - 1][px] {
+                        cube.apply_tape((prev, Down), (curr, Down));
+                    }
                 }
-                if py + 1 < height_panels && is_filled(px, py + 1) {
-                    cube.add((p, Down), (Panel(px, py + 1), Down));
+                if px > 0 {
+                    if let Some(prev) = mini_map[py][px - 1] {
+                        cube.apply_tape((prev, Right), (curr, Right));
+                    }
                 }
+                mini_map[py][px] = Some(curr);
+                panels.push((px, py));
             }
         }
     }
+    assert_eq!(panels.len(), 6);
     cube.finish();
 
     let mut y = 0;
@@ -310,13 +302,12 @@ fn part_2(input: &Input) -> usize {
                         }
                         Blank => {
                             // We have wandered off the map! Perform stitching.
-                            let old_panel = Panel(x / cs, y / cs);
                             assert_ne!(
-                                old_panel,
-                                Panel(xx / cs, yy / cs),
+                                (x / cs, y / cs),
+                                (xx / cs, yy / cs),
                                 "we must have changed panels"
                             );
-
+                            let old_panel = mini_map[y / cs][x / cs].unwrap();
                             let (dest_panel, new_dir) = cube.get((old_panel, h));
 
                             let slot = match h {
@@ -333,8 +324,8 @@ fn part_2(input: &Input) -> usize {
                                 Up => (slot, max),
                             };
 
-                            xx += cs * dest_panel.0;
-                            yy += cs * dest_panel.1;
+                            xx += cs * panels[dest_panel].0;
+                            yy += cs * panels[dest_panel].1;
                             match grid[yy][xx] {
                                 Open => {
                                     x = xx;
