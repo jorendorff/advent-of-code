@@ -20,15 +20,14 @@ fn items(s: &[char]) -> u64 {
 #[aoc_generator(day3, part1, jorendorff)]
 #[aoc_generator(day3, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Vec<(u64, u64)>> {
-    let p =
-        parser!(lines(
-            chars:alpha+ => {
-                let n = chars.len();
-                assert_eq!(n % 2, 0, "line {:?} has an odd number of characters",
-                           chars.into_iter().collect::<String>());
-                (items(&chars[..n / 2]), items(&chars[n / 2..]))
-            }
-        ));
+    let p = parser!(lines(
+        chars:alpha+ => {
+            let n = chars.len();
+            assert_eq!(n % 2, 0, "line {:?} has an odd number of characters",
+                       chars.into_iter().collect::<String>());
+            (items(&chars[..n / 2]), items(&chars[n / 2..]))
+        }
+    ));
     Ok(p.parse(text)?)
 }
 
