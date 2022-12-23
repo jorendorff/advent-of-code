@@ -15,71 +15,83 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
     Ok(p.parse(text)?)
 }
 
-#[aoc(day23, part1, jorendorff)]
-fn part_1(input: &Input) -> i64 {
-    // 225
+type Point = (i64, i64);
+
+fn elf_set(grid: &[Vec<bool>]) -> HashSet<Point> {
     let mut elves = HashSet::new();
 
-    let width = input[0].len();
-    let height = input.len();
+    let width = grid[0].len();
+    let height = grid.len();
     for y in 0..height {
         for x in 0..width {
-            if input[y][x] {
+            if grid[y][x] {
                 elves.insert((x as i64, y as i64));
             }
         }
     }
 
-    const N: (i64, i64) = (0, -1);
-    const NE: (i64, i64) = (1, -1);
-    const E: (i64, i64) = (1, 0);
-    const SE: (i64, i64) = (1, 1);
-    const S: (i64, i64) = (0, 1);
-    const SW: (i64, i64) = (-1, 1);
-    const W: (i64, i64) = (-1, 0);
-    const NW: (i64, i64) = (-1, -1);
+    elves
+}
 
-    let all_dirs = [N, NE, E, SE, S, SW, W, NW];
-    let dirs = [[N, NE, NW], [S, SE, SW], [W, NW, SW], [E, NE, SE]];
+const N: Point = (0, -1);
+const NE: Point = (1, -1);
+const E: Point = (1, 0);
+const SE: Point = (1, 1);
+const S: Point = (0, 1);
+const SW: Point = (-1, 1);
+const W: Point = (-1, 0);
+const NW: Point = (-1, -1);
+
+const ALL_DIRS: [Point; 8] = [N, NE, E, SE, S, SW, W, NW];
+const DIRS: [[Point; 3]; 4] = [[N, NE, NW], [S, SE, SW], [W, NW, SW], [E, NE, SE]];
+
+fn elf_round(elves: &HashSet<Point>, round: usize) -> HashSet<Point> {
+    let elf_vec: Vec<(i64, i64)> = elves.iter().copied().collect();
+    let proposals: Vec<(i64, i64)> = elf_vec
+        .iter()
+        .copied()
+        .map(|(x, y)| {
+            let test = |(dx, dy)| elves.contains(&(x + dx, y + dy));
+            if ALL_DIRS.iter().copied().all(|d| !test(d)) {
+                (x, y)
+            } else {
+                for d in round..round + 4 {
+                    let dir_array = &DIRS[d % 4];
+                    if dir_array.iter().copied().all(|d| !test(d)) {
+                        let (dx, dy) = dir_array[0];
+                        return (x + dx, y + dy);
+                    }
+                }
+                (x, y)
+            }
+        })
+        .collect();
+    let mut proposal_counts = HashMap::new();
+    for p in proposals.iter().copied() {
+        *proposal_counts.entry(p).or_insert(0) += 1;
+    }
+
+    elf_vec
+        .iter()
+        .copied()
+        .zip(proposals)
+        .map(|(current, proposed)| {
+            if proposal_counts.get(&proposed) == Some(&1) {
+                proposed
+            } else {
+                current
+            }
+        })
+        .collect()
+}
+
+#[aoc(day23, part1, jorendorff)]
+fn part_1(input: &Input) -> i64 {
+    // Rank #225 on the global leaderboard.
+    let mut elves = elf_set(input);
 
     for round in 0..10 {
-        let elf_vec: Vec<(i64, i64)> = elves.iter().copied().collect();
-        let proposals: Vec<(i64, i64)> = elf_vec
-            .iter()
-            .copied()
-            .map(|(x, y)| {
-                let test = |(dx, dy)| elves.contains(&(x + dx, y + dy));
-                if all_dirs.iter().copied().all(|d| !test(d)) {
-                    (x, y)
-                } else {
-                    for d in round..round + 4 {
-                        let dir_array = &dirs[d % 4];
-                        if dir_array.iter().copied().all(|d| !test(d)) {
-                            let (dx, dy) = dir_array[0];
-                            return (x + dx, y + dy);
-                        }
-                    }
-                    (x, y)
-                }
-            })
-            .collect();
-        let mut proposal_counts = HashMap::new();
-        for p in proposals.iter().copied() {
-            *proposal_counts.entry(p).or_insert(0) += 1;
-        }
-
-        elves = elf_vec
-            .iter()
-            .copied()
-            .zip(proposals)
-            .map(|(current, proposed)| {
-                if proposal_counts.get(&proposed) == Some(&1) {
-                    proposed
-                } else {
-                    current
-                }
-            })
-            .collect();
+        elves = elf_round(&elves, round);
     }
     let x_min = elves.iter().map(|&(x, _y)| x).min().unwrap();
     let x_max = elves.iter().map(|&(x, _y)| x).max().unwrap();
@@ -91,78 +103,15 @@ fn part_1(input: &Input) -> i64 {
 
 #[aoc(day23, part2, jorendorff)]
 fn part_2(input: &Input) -> usize {
-    // 195
-    let mut elves = HashSet::new();
-
-    let width = input[0].len();
-    let height = input.len();
-    for y in 0..height {
-        for x in 0..width {
-            if input[y][x] {
-                elves.insert((x as i64, y as i64));
-            }
-        }
-    }
-
-    const N: (i64, i64) = (0, -1);
-    const NE: (i64, i64) = (1, -1);
-    const E: (i64, i64) = (1, 0);
-    const SE: (i64, i64) = (1, 1);
-    const S: (i64, i64) = (0, 1);
-    const SW: (i64, i64) = (-1, 1);
-    const W: (i64, i64) = (-1, 0);
-    const NW: (i64, i64) = (-1, -1);
-
-    let all_dirs = [N, NE, E, SE, S, SW, W, NW];
-    let dirs = [[N, NE, NW], [S, SE, SW], [W, NW, SW], [E, NE, SE]];
+    // Rank #195 on the global leaderboard.
+    let mut elves = elf_set(input);
 
     for round in 0.. {
-        let elf_vec: Vec<(i64, i64)> = elves.iter().copied().collect();
-        let proposals: Vec<(i64, i64)> = elf_vec
-            .iter()
-            .copied()
-            .map(|(x, y)| {
-                let test = |(dx, dy)| elves.contains(&(x + dx, y + dy));
-                if all_dirs.iter().copied().all(|d| !test(d)) {
-                    (x, y)
-                } else {
-                    for d in round..round + 4 {
-                        let dir_array = &dirs[d % 4];
-                        if dir_array.iter().copied().all(|d| !test(d)) {
-                            let (dx, dy) = dir_array[0];
-                            return (x + dx, y + dy);
-                        }
-                    }
-                    (x, y)
-                }
-            })
-            .collect();
-        let mut proposal_counts = HashMap::new();
-        for p in proposals.iter().copied() {
-            *proposal_counts.entry(p).or_insert(0) += 1;
-        }
-
-        let mut moved = false;
-        
-        elves = elf_vec
-            .iter()
-            .copied()
-            .zip(proposals)
-            .map(|(current, proposed)| {
-                if proposal_counts.get(&proposed) == Some(&1) {
-                    if proposed != current {
-                        moved = true;
-                    }
-                    proposed
-                } else {
-                    current
-                }
-            })
-            .collect();
-
-        if !moved {
+        let new_elf_positions = elf_round(&elves, round);
+        if new_elf_positions == elves {
             return round + 1;
         }
+        elves = new_elf_positions;
     }
     panic!();
 }
@@ -179,7 +128,7 @@ mod tests {
 ..##.
 .....
 ";
-    
+
     const EXAMPLE: &str = "\
 ....#..
 ..###.#
