@@ -185,8 +185,7 @@ impl CubeMap {
                 for dir in [Right, Down, Left, Up] {
                     if self.edges[origin][dir as usize].is_none() {
                         // Try folding in from the right.
-                        if let Some((p, d)) = self
-                            .edges[origin][dir.turn_right() as usize]
+                        if let Some((p, d)) = self.edges[origin][dir.turn_right() as usize]
                             .and_then(|(p, d)| self.edges[p][d.turn_left() as usize])
                         {
                             self.apply_tape((origin, dir), (p, d.turn_right()));
@@ -194,8 +193,7 @@ impl CubeMap {
                         }
 
                         // Try folding in from the left.
-                        if let Some((p, d)) = self
-                            .edges[origin][dir.turn_left() as usize]
+                        if let Some((p, d)) = self.edges[origin][dir.turn_left() as usize]
                             .and_then(|(p, d)| self.edges[p][d.turn_right() as usize])
                         {
                             self.apply_tape((origin, dir), (p, d.turn_left()));
