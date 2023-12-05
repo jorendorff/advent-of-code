@@ -33,7 +33,7 @@ static SPELLED_DIGITS: &[(&str, u64)] = &[
     ("nine", 9),
 ];
 
-fn find_digit(line: &str, places: impl Iterator<Item=(usize, char)>) -> u64 {
+fn find_digit(line: &str, places: impl Iterator<Item = (usize, char)>) -> u64 {
     for (i, c) in places {
         if let Some(d) = c.to_digit(10) {
             return d.into();

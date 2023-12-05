@@ -21,11 +21,14 @@ fn parse_input(text: &str) -> anyhow::Result<Vec<Game>> {
 
 fn is_possible(game: &Game) -> bool {
     game.draws.iter().all(|draw| {
-        draw.iter().all(|(count, color)| *count <= match color.as_str() {
-            "red" => 12,
-            "green" => 13,
-            "blue" => 14,
-            _ => 0,
+        draw.iter().all(|(count, color)| {
+            *count
+                <= match color.as_str() {
+                    "red" => 12,
+                    "green" => 13,
+                    "blue" => 14,
+                    _ => 0,
+                }
         })
     })
 }
@@ -38,7 +41,10 @@ fn part_1(input: &[Game]) -> usize {
 
 fn power(game: &Game) -> u64 {
     use std::collections::HashMap;
-    let mut maxes: HashMap<String, u64> = ["red", "green", "blue"].into_iter().map(|s| (s.to_string(), 0)).collect();
+    let mut maxes: HashMap<String, u64> = ["red", "green", "blue"]
+        .into_iter()
+        .map(|s| (s.to_string(), 0))
+        .collect();
     for draw in &game.draws {
         for (count, color) in draw {
             let entry = maxes.get_mut(color).unwrap();

@@ -54,17 +54,18 @@ fn parse_input(text: &str) -> anyhow::Result<Engine> {
 
 impl PartNumber {
     fn is_adjacent(&self, r: usize, c: usize) -> bool {
-        self.row <= r + 1 && r <= self.row + 1
-            && self.col <= c + 1 && c <= self.col + self.len
+        self.row <= r + 1 && r <= self.row + 1 && self.col <= c + 1 && c <= self.col + self.len
     }
 }
 
 #[aoc(day3, part1, jorendorff)]
 fn part_1(engine: &Engine) -> u64 {
-    engine.numbers
+    engine
+        .numbers
         .iter()
         .filter(|num| {
-            engine.symbols
+            engine
+                .symbols
                 .iter()
                 .copied()
                 .any(|(r, c, _)| num.is_adjacent(r, c))
@@ -75,16 +76,25 @@ fn part_1(engine: &Engine) -> u64 {
 
 #[aoc(day3, part2, jorendorff)]
 fn part_2(engine: &Engine) -> u64 {
-    engine.symbols.iter().copied().filter_map(|(r, c, chr)| -> Option<u64> {
-        if chr != '*' {
-            return None;
-        }
-        let nums = engine.numbers.iter().filter(|num| num.is_adjacent(r, c)).collect::<Vec<_>>();
-        if nums.len() != 2 {
-            return None;
-        }
-        Some(nums[0].value * nums[1].value)
-    }).sum()
+    engine
+        .symbols
+        .iter()
+        .copied()
+        .filter_map(|(r, c, chr)| -> Option<u64> {
+            if chr != '*' {
+                return None;
+            }
+            let nums = engine
+                .numbers
+                .iter()
+                .filter(|num| num.is_adjacent(r, c))
+                .collect::<Vec<_>>();
+            if nums.len() != 2 {
+                return None;
+            }
+            Some(nums[0].value * nums[1].value)
+        })
+        .sum()
 }
 
 #[cfg(test)]

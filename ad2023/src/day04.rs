@@ -8,12 +8,13 @@ struct Card {
 
 impl Card {
     fn hits(&self) -> u64 {
-        self.nums.iter().copied()
+        self.nums
+            .iter()
+            .copied()
             .filter(|n| self.winning.contains(n))
             .count() as u64
     }
 }
-        
 
 #[aoc_generator(day4, part1, jorendorff)]
 #[aoc_generator(day4, part2, jorendorff)]
