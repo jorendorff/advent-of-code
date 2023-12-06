@@ -7,8 +7,6 @@ struct Almanac {
 }
 
 struct Map {
-    source: String,
-    target: String,
     mappings: Vec<Mapping>,
 }
 
@@ -33,18 +31,16 @@ impl Map {
 #[aoc_generator(day5, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Almanac> {
     let p = parser!(
-            seeds:section(line("seeds: " repeat_sep(usize, " ")))
-
-                maps:sections(
-                    source:string(alpha+) "-to-" target:string(alpha+) " map:\n"
-                        mappings:lines(
-                            destination_start: usize " " source_start:usize " " len:usize
-                                => Mapping { destination_start, source_start, len }
-                        )
-                        => Map { source, target, mappings }
-                )
-
-                => Almanac { seeds, maps }
+        seeds:section(line("seeds: " repeat_sep(usize, " ")))
+        maps:sections(
+            string(alpha+) "-to-" string(alpha+) " map:\n"
+            mappings:lines(
+                destination_start: usize " " source_start:usize " " len:usize
+                    => Mapping { destination_start, source_start, len }
+            )
+            => Map { mappings }
+        )
+        => Almanac { seeds, maps }
     );
     Ok(p.parse(text)?)
 }
@@ -78,16 +74,16 @@ impl Almanac {
         'outer_loop: while start < stop {
             for mapping in &self.maps[layer].mappings {
                 if (mapping.source_start..mapping.source_start + mapping.len).contains(&start) {
+                    let slice_stop = stop.min(mapping.source_start + mapping.len);
                     let out = self.solve(
                         layer + 1,
                         mapping.destination_start + (start - mapping.source_start),
-                        (mapping.destination_start + (stop - mapping.source_start))
-                            .min(mapping.destination_start + mapping.len),
+                        mapping.destination_start + (slice_stop - mapping.source_start),
                     );
                     if out < best {
                         best = out;
                     }
-                    start = mapping.source_start + mapping.len;
+                    start = slice_stop;
                     continue 'outer_loop;
                 }
             }
