@@ -26,7 +26,7 @@ fn parse_input(text: &str) -> anyhow::Result<Engine> {
 
         for (c, chr) in line.iter().copied().enumerate() {
             if let Some(d) = chr.to_digit(10) {
-                let n = num.get_or_insert_with(|| PartNumber {
+                let n = num.get_or_insert(PartNumber {
                     row: r,
                     col: c,
                     len: 0,
