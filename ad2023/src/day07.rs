@@ -25,7 +25,7 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
     Ok(p.parse(text)?)
 }
 
-fn hand_key(hand: &(Vec<i32>, u64)) -> (i32, Vec<i32>) {
+fn hand_key(hand: &(Vec<i32>, u64)) -> (Vec<usize>, Vec<i32>) {
     let (nums, _bid) = hand;
     let mut hist = std::collections::HashMap::<i32, usize>::new();
     for card in nums {
@@ -33,16 +33,8 @@ fn hand_key(hand: &(Vec<i32>, u64)) -> (i32, Vec<i32>) {
     }
     let mut freq: Vec<usize> = hist.values().copied().collect();
     freq.sort_unstable();
-    let ty = match *freq {
-        [5] => 6,
-        [1, 4] => 5,
-        [2, 3] => 4,
-        [1, 1, 3] => 3,
-        [1, 2, 2] => 2,
-        [1, 1, 1, 2] => 1,
-        _ => 0,
-    };
-    (ty, nums.to_vec())
+    freq.reverse();
+    (freq, nums.to_vec())
 }
 
 #[aoc(day07, part1, jorendorff)]
@@ -53,7 +45,7 @@ fn part_1(input: &Input) -> u64 {
     input.into_iter().enumerate().map(|(index, (_cards, bid))| bid * (index as u64 + 1)).sum()
 }
 
-fn hand_key_2(hand: &(Vec<i32>, u64)) -> (i32, Vec<i32>) {
+fn hand_key_2(hand: &(Vec<i32>, u64)) -> (Vec<usize>, Vec<i32>) {
     let (nums, _bid) = hand;
     let mut hist = std::collections::HashMap::<i32, usize>::new();
     let mut jacks = 0usize;
@@ -66,20 +58,12 @@ fn hand_key_2(hand: &(Vec<i32>, u64)) -> (i32, Vec<i32>) {
     }
     let mut freq: Vec<usize> = hist.values().copied().collect();
     freq.sort_unstable();
-    match freq.last_mut() {
+    freq.reverse();
+    match freq.first_mut() {
         Some(item) => *item += jacks,
         None => freq.push(jacks),
     }
-    let ty = match *freq {
-        [5] => 6,
-        [1, 4] => 5,
-        [2, 3] => 4,
-        [1, 1, 3] => 3,
-        [1, 2, 2] => 2,
-        [1, 1, 1, 2] => 1,
-        _ => 0,
-    };
-    (ty, nums.to_vec())
+    (freq, nums.to_vec())
 }
 
 #[aoc(day07, part2, jorendorff)]
