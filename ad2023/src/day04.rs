@@ -16,8 +16,7 @@ impl Card {
     }
 }
 
-#[aoc_generator(day4, part1, jorendorff)]
-#[aoc_generator(day4, part2, jorendorff)]
+#[aoc_generator(day4, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Vec<Card>> {
     let p = parser!(
         lines(

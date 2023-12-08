@@ -27,8 +27,7 @@ impl Map {
     }
 }
 
-#[aoc_generator(day5, part1, jorendorff)]
-#[aoc_generator(day5, part2, jorendorff)]
+#[aoc_generator(day5, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Almanac> {
     let p = parser!(
         seeds:section(line("seeds: " repeat_sep(usize, " ")))

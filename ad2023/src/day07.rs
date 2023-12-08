@@ -3,8 +3,7 @@ use aoc_runner_derive::*;
 
 type Input = Vec<(Vec<i32>, u64)>;
 
-#[aoc_generator(day07, part1, jorendorff)]
-#[aoc_generator(day07, part2, jorendorff)]
+#[aoc_generator(day07, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Input> {
     let p = parser!(lines(
         {

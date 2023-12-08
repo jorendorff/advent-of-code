@@ -13,8 +13,7 @@ struct Engine {
     symbols: Vec<(usize, usize, char)>,
 }
 
-#[aoc_generator(day3, part1, jorendorff)]
-#[aoc_generator(day3, part2, jorendorff)]
+#[aoc_generator(day3, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Engine> {
     let p = parser!(lines(any_char+));
     let input = p.parse(text)?;

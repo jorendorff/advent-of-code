@@ -6,8 +6,7 @@ struct Game {
     draws: Vec<Vec<(usize, String)>>,
 }
 
-#[aoc_generator(day2, part1, jorendorff)]
-#[aoc_generator(day2, part2, jorendorff)]
+#[aoc_generator(day2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Vec<Game>> {
     let p = parser!(
         lines(
