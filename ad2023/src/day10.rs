@@ -25,6 +25,7 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
     Ok(p.parse(text)?)
 }
 
+// Replace the 'S' with a pipe and return its coordinates.
 fn fix_input(input: &mut Input) -> (usize, usize) {
     let h = input.len();
     let w = input[0].len();
@@ -102,7 +103,7 @@ fn part_2(input: &Input) -> usize {
     let mut input = input.clone();
     let h = input.len();
     let w = input[0].len();
-    let mut path_dir = vec![vec![(0, 0); w]; h];
+    let mut path_dir = vec![vec![(0, 0); w]; h]; // doubly linked list through the loop, (0, 0) elsewhere
     let (r0, c0) = fix_input(&mut input);
 
     let (mut r, mut c) = (r0, c0);
@@ -131,31 +132,22 @@ fn part_2(input: &Input) -> usize {
         }
     }
 
-    let p0 = path_dir[r0][c0];
-    path_dir[r0][c0].0 = came_from;
+    path_dir[r0][c0].0 = came_from;  // close the loop
 
+    // Now scan each line horizontally and count tiles where the winding count is nonzero.
     let mut num_enclosed = 0;
-    for r in 0..h {
+    for row in path_dir {
         let mut row_wind_count = 0;
-        for c in 0..w {
-            if path_dir[r][c] == (0, 0) {
+        for (came_from, goes_to) in row {
+            if came_from == 0 { // tile is not on the loop
                 if row_wind_count != 0 {
-                    println!("counting at {r}, {c}; count is {row_wind_count}");
                     num_enclosed += 1;
                 }
             } else {
-                let (came_from, goes_to) = path_dir[r][c];
-                if came_from == SOUTH {
-                    println!("up at {r}, {c}");
-                    row_wind_count += 1;
-                } else if came_from == NORTH {
+                if came_from == NORTH {
                     row_wind_count -= 1;
                 }
-
-                if goes_to == SOUTH {
-                    println!("down at {r}, {c}");
-                    row_wind_count -= 1;
-                } else if goes_to == NORTH {
+                if goes_to == NORTH {
                     row_wind_count += 1;
                 }
             }
