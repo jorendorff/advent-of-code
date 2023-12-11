@@ -103,7 +103,7 @@ fn part_2(input: &Input) -> usize {
     let mut input = input.clone();
     let h = input.len();
     let w = input[0].len();
-    let mut path_dir = vec![vec![(0, 0); w]; h]; // doubly linked list through the loop, (0, 0) elsewhere
+    let mut is_on_loop = vec![vec![false; w]; h];
     let (r0, c0) = fix_input(&mut input);
 
     let (mut r, mut c) = (r0, c0);
@@ -116,7 +116,7 @@ fn part_2(input: &Input) -> usize {
             }
         }
 
-        path_dir[r][c] = (came_from, goes_to);
+        is_on_loop[r][c] = true;
 
         assert_ne!(goes_to, 0);
         go(goes_to, &mut r, &mut c);
@@ -132,24 +132,17 @@ fn part_2(input: &Input) -> usize {
         }
     }
 
-    path_dir[r0][c0].0 = came_from;  // close the loop
-
-    // Now scan each line horizontally and count tiles where the winding count is nonzero.
+    // Now scan each line horizontally and count tiles where the winding count is odd.
     let mut num_enclosed = 0;
-    for row in path_dir {
-        let mut row_wind_count = 0;
-        for (came_from, goes_to) in row {
-            if came_from == 0 { // tile is not on the loop
-                if row_wind_count != 0 {
-                    num_enclosed += 1;
+    for (input_row, is_on_loop_row) in input.iter().zip(is_on_loop) {
+        let mut is_inside = false;
+        for (input_tile, is_tile_on_loop) in input_row.iter().zip(is_on_loop_row) {
+            if is_tile_on_loop {
+                if input_tile & NORTH != 0 {
+                    is_inside = !is_inside;
                 }
-            } else {
-                if came_from == NORTH {
-                    row_wind_count -= 1;
-                }
-                if goes_to == NORTH {
-                    row_wind_count += 1;
-                }
+            } else if is_inside {
+                num_enclosed += 1;
             }
         }
     }
