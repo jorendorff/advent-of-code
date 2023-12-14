@@ -65,51 +65,54 @@ fn one_cycle(input: &mut Input) {
 
     //west
     for row in input.iter_mut() {
-        loop {
-            let mut more = false;
-            for c in 0..(w - 1) {
-                if row[c] == SPACE && row[c + 1] == ROCK {
-                    row[c] = ROCK;
-                    row[c + 1] = SPACE;
-                    more = true;
+        let mut out = 0;
+        for c in 0..w {
+            match row[c] {
+                SPACE => {}
+                ROCK => {
+                    if out != c {
+                        row[out] = ROCK;
+                        row[c] = SPACE;
+                    }
+                    out += 1;
                 }
-            }
-            if !more {
-                break;
+                _ => out = c + 1,
             }
         }
     }
 
     //south
     for c in 0..w {
-        loop {
-            let mut more = false;
-            for r in 0..(h - 1) {
-                if input[r][c] == ROCK && input[r + 1][c] == SPACE {
-                    input[r][c] = SPACE;
-                    input[r + 1][c] = ROCK;
-                    more = true;
+        let mut out = h - 1;
+        for r in (0..h).rev() {
+            match input[r][c] {
+                SPACE => {}
+                ROCK => {
+                    if out != r {
+                        input[out][c] = ROCK;
+                        input[r][c] = SPACE;
+                    }
+                    out = out.wrapping_sub(1);
                 }
-            }
-            if !more {
-                break;
+                _ => out = r.wrapping_sub(1),
             }
         }
     }
 
     //east
     for row in input.iter_mut() {
-        loop {
-            let mut more = false;
-            for c in 0..(w - 1) {
-                if row[c] == ROCK && row[c + 1] == SPACE {
-                    row[c] = SPACE;
-                    row[c + 1] = ROCK;
-                    more = true;
+        let mut out = w - 1;
+        for c in (0..w).rev() {
+            match row[c] {
+                SPACE => {}
+                ROCK => {
+                    if out != c {
+                        row[out] = ROCK;
+                        row[c] = SPACE;
+                    }
+                    out = out.wrapping_sub(1);
                 }
-            }
-            if !more {
-                break;
+                _ => out = c.wrapping_sub(1),
             }
         }
     }
