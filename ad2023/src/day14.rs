@@ -4,16 +4,17 @@ use std::collections::HashMap;
 use aoc_parse::{parser, prelude::*};
 use aoc_runner_derive::*;
 
-type Input = Vec<Vec<usize>>;
+type Cell = u8;
+type Input = Vec<Vec<Cell>>;
 
-const SPACE: usize = 0;
-const ROCK: usize = 1;
+const SPACE: Cell = 0;
+const ROCK: Cell = 1;
 
 #[aoc_generator(day14, part1, jorendorff)]
 #[aoc_generator(day14, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Input> {
     let p = parser!(lines(
-        char_of(".O#")+
+        (x:char_of(".O#") => x as Cell)+
     ));
     Ok(p.parse(text)?)
 }
@@ -117,7 +118,7 @@ fn one_cycle(input: &mut Input) {
 fn part_2(input: &Input) -> usize {
     // #67 on the global leaderboard
 
-    let mut cache: HashMap<Vec<Vec<usize>>, usize> = HashMap::new();
+    let mut cache: HashMap<Input, usize> = HashMap::new();
 
     let n = 1000000000;
 
