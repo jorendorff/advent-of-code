@@ -6,6 +6,9 @@ use aoc_runner_derive::*;
 
 type Input = Vec<Vec<usize>>;
 
+const SPACE: usize = 0;
+const ROCK: usize = 1;
+
 #[aoc_generator(day14, part1, jorendorff)]
 #[aoc_generator(day14, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Input> {
@@ -20,7 +23,7 @@ fn total_load_north(input: &Input) -> usize {
     input
         .iter()
         .enumerate()
-        .map(|(r, row)| row.iter().copied().filter(|c| *c == 1).count() * (h - r))
+        .map(|(r, row)| row.iter().copied().filter(|c| *c == ROCK).count() * (h - r))
         .sum()
 }
 
@@ -31,9 +34,9 @@ fn tilt_north(input: &mut Input) {
         loop {
             let mut more = false;
             for r in 0..(h - 1) {
-                if input[r][c] == 0 && input[r + 1][c] == 1 {
-                    input[r][c] = 1;
-                    input[r + 1][c] = 0;
+                if input[r][c] == SPACE && input[r + 1][c] == ROCK {
+                    input[r][c] = ROCK;
+                    input[r + 1][c] = SPACE;
                     more = true;
                 }
             }
@@ -63,9 +66,9 @@ fn one_cycle(input: &mut Input) {
         loop {
             let mut more = false;
             for c in 0..(w - 1) {
-                if row[c] == 0 && row[c + 1] == 1 {
-                    row[c] = 1;
-                    row[c + 1] = 0;
+                if row[c] == SPACE && row[c + 1] == ROCK {
+                    row[c] = ROCK;
+                    row[c + 1] = SPACE;
                     more = true;
                 }
             }
@@ -80,9 +83,9 @@ fn one_cycle(input: &mut Input) {
         loop {
             let mut more = false;
             for r in 0..(h - 1) {
-                if input[r][c] == 1 && input[r + 1][c] == 0 {
-                    input[r][c] = 0;
-                    input[r + 1][c] = 1;
+                if input[r][c] == ROCK && input[r + 1][c] == SPACE {
+                    input[r][c] = SPACE;
+                    input[r + 1][c] = ROCK;
                     more = true;
                 }
             }
@@ -97,9 +100,9 @@ fn one_cycle(input: &mut Input) {
         loop {
             let mut more = false;
             for c in 0..(w - 1) {
-                if row[c] == 1 && row[c + 1] == 0 {
-                    row[c] = 0;
-                    row[c + 1] = 1;
+                if row[c] == ROCK && row[c + 1] == SPACE {
+                    row[c] = SPACE;
+                    row[c + 1] = ROCK;
                     more = true;
                 }
             }
