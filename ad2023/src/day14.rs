@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use std::collections::hash_map::Entry;
+use std::collections::HashMap;
 
 use aoc_parse::{parser, prelude::*};
 use aoc_runner_derive::*;
@@ -17,9 +17,11 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
 
 fn total_load_north(input: &Input) -> usize {
     let h = input.len();
-    input.iter().enumerate().map(|(r, row)| {
-        row.iter().copied().filter(|c| *c == 1).count()  * (h - r)
-    }).sum()
+    input
+        .iter()
+        .enumerate()
+        .map(|(r, row)| row.iter().copied().filter(|c| *c == 1).count() * (h - r))
+        .sum()
 }
 
 fn tilt_north(input: &mut Input) {
@@ -29,9 +31,9 @@ fn tilt_north(input: &mut Input) {
         loop {
             let mut more = false;
             for r in 0..(h - 1) {
-                if input[r][c] == 0 && input[r+1][c] == 1 {
+                if input[r][c] == 0 && input[r + 1][c] == 1 {
                     input[r][c] = 1;
-                    input[r+1][c] = 0;
+                    input[r + 1][c] = 0;
                     more = true;
                 }
             }
@@ -63,11 +65,13 @@ fn one_cycle(input: &mut Input) {
             for c in 0..(w - 1) {
                 if row[c] == 0 && row[c + 1] == 1 {
                     row[c] = 1;
-                    row[c+1] = 0;
+                    row[c + 1] = 0;
                     more = true;
                 }
             }
-            if !more { break; }
+            if !more {
+                break;
+            }
         }
     }
 
@@ -76,9 +80,9 @@ fn one_cycle(input: &mut Input) {
         loop {
             let mut more = false;
             for r in 0..(h - 1) {
-                if input[r][c] == 1 && input[r+1][c] == 0 {
+                if input[r][c] == 1 && input[r + 1][c] == 0 {
                     input[r][c] = 0;
-                    input[r+1][c] = 1;
+                    input[r + 1][c] = 1;
                     more = true;
                 }
             }
@@ -95,11 +99,13 @@ fn one_cycle(input: &mut Input) {
             for c in 0..(w - 1) {
                 if row[c] == 1 && row[c + 1] == 0 {
                     row[c] = 0;
-                    row[c+1] = 1;
+                    row[c + 1] = 1;
                     more = true;
                 }
             }
-            if !more { break; }
+            if !more {
+                break;
+            }
         }
     }
 }
