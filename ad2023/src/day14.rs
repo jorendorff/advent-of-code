@@ -32,18 +32,18 @@ fn tilt_north(input: &mut Input) {
     let w = input[0].len();
     let h = input.len();
     for c in 0..w {
-        let mut out: Option<usize> = None;
+        let mut out = 0;
         for r in 0..h {
             match input[r][c] {
-                ROCK => if let Some(ro) = out {
-                    input[ro][c] = ROCK;
-                    input[r][c] = SPACE;
-                    out = Some(ro + 1);
+                SPACE => {}
+                ROCK => {
+                    if out != r {
+                        input[out][c] = ROCK;
+                        input[r][c] = SPACE;
+                    }
+                    out += 1;
                 }
-                SPACE => if out.is_none() {
-                    out = Some(r);
-                }
-                _ => out = None,
+                _ => out = r + 1,
             }
         }
     }
