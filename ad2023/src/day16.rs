@@ -6,9 +6,7 @@ type Input = Vec<Vec<char>>;
 #[aoc_generator(day16, part1, jorendorff)]
 #[aoc_generator(day16, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Input> {
-    let p = parser!(lines(
-        any_char+
-    ));
+    let p = parser!(lines(any_char+));
     Ok(p.parse(text)?)
 }
 
@@ -17,12 +15,12 @@ const UP: usize = 1;
 const LEFT: usize = 2;
 const DOWN: usize = 3;
 
-fn dr(dir: usize) -> usize {
-    [0, usize::MAX, 0, 1][dir]
+fn bump_row(row: usize, dir: usize) -> usize {
+    row.wrapping_add([0, usize::MAX, 0, 1][dir])
 }
 
-fn dc(dir: usize) -> usize {
-    [1, 0, usize::MAX, 0][dir]
+fn bump_col(col: usize, dir: usize) -> usize {
+    col.wrapping_add([1, 0, usize::MAX, 0][dir])
 }
 
 fn solve(input: &Input, r0: usize, c0: usize, dir0: usize) -> usize {
@@ -34,7 +32,13 @@ fn solve(input: &Input, r0: usize, c0: usize, dir0: usize) -> usize {
 
     lit[r0][c0][dir0] = true;
 
-    fn enlist(lit: &mut Vec<Vec<[bool; 4]>>, todo: &mut Vec<(usize, usize, usize)>, r: usize, c: usize, dir: usize) {
+    fn enlist(
+        lit: &mut Vec<Vec<[bool; 4]>>,
+        todo: &mut Vec<(usize, usize, usize)>,
+        r: usize,
+        c: usize,
+        dir: usize,
+    ) {
         if r < lit.len() && c < lit[r].len() && !lit[r][c][dir] {
             lit[r][c][dir] = true;
             todo.push((r, c, dir));
@@ -44,8 +48,8 @@ fn solve(input: &Input, r0: usize, c0: usize, dir0: usize) -> usize {
     while let Some((r, c, dir)) = todo.pop() {
         match input[r][c] {
             '.' => {
-                let r1 = r.wrapping_add(dr(dir));
-                let c1 = c.wrapping_add(dc(dir));
+                let r1 = bump_row(r, dir);
+                let c1 = bump_col(c, dir);
                 enlist(&mut lit, &mut todo, r1, c1, dir);
             }
             '/' => {
@@ -56,7 +60,13 @@ fn solve(input: &Input, r0: usize, c0: usize, dir0: usize) -> usize {
                     DOWN => LEFT,
                     _ => panic!(),
                 };
-                enlist(&mut lit, &mut todo, r.wrapping_add(dr(dir1)), c.wrapping_add(dc(dir1)), dir1);
+                enlist(
+                    &mut lit,
+                    &mut todo,
+                    bump_row(r, dir1),
+                    bump_col(c, dir1),
+                    dir1,
+                );
             }
             '\\' => {
                 let dir1 = match dir {
@@ -66,16 +76,22 @@ fn solve(input: &Input, r0: usize, c0: usize, dir0: usize) -> usize {
                     DOWN => RIGHT,
                     _ => panic!(),
                 };
-                enlist(&mut lit, &mut todo, r.wrapping_add(dr(dir1)), c.wrapping_add(dc(dir1)), dir1);
+                enlist(
+                    &mut lit,
+                    &mut todo,
+                    bump_row(r, dir1),
+                    bump_col(c, dir1),
+                    dir1,
+                );
             }
             '|' if dir == UP || dir == DOWN => {
-                let r1 = r.wrapping_add(dr(dir));
-                let c1 = c.wrapping_add(dc(dir));
+                let r1 = bump_row(r, dir);
+                let c1 = bump_col(c, dir);
                 enlist(&mut lit, &mut todo, r1, c1, dir);
             }
             '-' if dir == LEFT || dir == RIGHT => {
-                let r1 = r.wrapping_add(dr(dir));
-                let c1 = c.wrapping_add(dc(dir));
+                let r1 = bump_row(r, dir);
+                let c1 = bump_col(c, dir);
                 enlist(&mut lit, &mut todo, r1, c1, dir);
             }
             '|' => {
@@ -90,26 +106,31 @@ fn solve(input: &Input, r0: usize, c0: usize, dir0: usize) -> usize {
         }
     }
 
-    for (lit_row, input_row) in lit.iter().zip(input) {
-        for (lit_arr, input_ch) in lit_row.iter().zip(input_row.iter().copied()) {
-            if lit_arr.iter().any(|q| *q) {
-                print!("\x1b[31;103m{input_ch}\x1b[39;49m");
-            } else {
-                print!("{input_ch}");
-            }
-        }
-        println!();
-    }
+    // // dump the map, for fun
+    // for (lit_row, input_row) in lit.iter().zip(input) {
+    //     for (lit_arr, input_ch) in lit_row.iter().zip(input_row.iter().copied()) {
+    //         if lit_arr.iter().any(|q| *q) {
+    //             print!("\x1b[31;103m{input_ch}\x1b[39;49m");
+    //         } else {
+    //             print!("{input_ch}");
+    //         }
+    //     }
+    //     println!();
+    // }
 
-    lit.into_iter().map(|row| {
-        row.into_iter().map(|dirs| {
-            if dirs.iter().any(|is_lit| *is_lit) {
-                1_usize
-            } else {
-                0
-            }
-        }).sum::<usize>()
-    }).sum()
+    lit.into_iter()
+        .map(|row| {
+            row.into_iter()
+                .map(|dirs| {
+                    if dirs.iter().any(|is_lit| *is_lit) {
+                        1_usize
+                    } else {
+                        0
+                    }
+                })
+                .sum::<usize>()
+        })
+        .sum()
 }
 
 #[aoc(day16, part1, jorendorff)]
@@ -123,7 +144,8 @@ fn part_2(input: &Input) -> usize {
     // #429 on the global leaderboard
     let h = input.len();
     let w = input[0].len();
-    (0..w).map(|c| (0, c, DOWN))
+    (0..w)
+        .map(|c| (0, c, DOWN))
         .chain((0..h).map(|r| (r, 0, RIGHT)))
         .chain((0..w).map(|c| (h - 1, c, UP)))
         .chain((0..h).map(|r| (r, w - 1, LEFT)))
