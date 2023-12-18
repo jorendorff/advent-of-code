@@ -12,10 +12,10 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
     Ok(p.parse(text)?)
 }
 
-fn solve(instructions: impl IntoIterator<Item=(usize, u32)>) -> i128 {
+fn solve(instructions: impl IntoIterator<Item=(usize, u32)>) -> i64 {
     // Imagine the digger draws a line in chalk as it goes, right in the center of the trench.
     // `area` is the (directed) area of the region bounded by this line.
-    let mut area = 0i128;
+    let mut area = 0i64;
 
     // `border` is the area of the region inside the trench, but outside the chalk line. Two hacks:
     //
@@ -29,10 +29,10 @@ fn solve(instructions: impl IntoIterator<Item=(usize, u32)>) -> i128 {
     //     fix it by initializing `border` to 1.
     let mut border = 1;
 
-    let mut x = 0i128;
+    let mut x = 0i64;
 
     for (dir, n) in instructions {
-        let n = n as i128;
+        let n = n as i64;
         match dir {
             0 => {
                 x += n;
@@ -40,13 +40,13 @@ fn solve(instructions: impl IntoIterator<Item=(usize, u32)>) -> i128 {
             }
             1 => {
                 border += n;
-                area += (i64::MAX as i128 - x) * n;
+                area += x * n;
             }
             2 => {
                 x -= n;
             }
             3 => {
-                area -= (i64::MAX as i128 - x) * n;
+                area -= x * n;
             }
             _ => panic!(),
         }
@@ -56,13 +56,13 @@ fn solve(instructions: impl IntoIterator<Item=(usize, u32)>) -> i128 {
 }
 
 #[aoc(day18, part1, jorendorff)]
-fn part_1(input: &Input) -> i128 {
+fn part_1(input: &Input) -> i64 {
     // #276 on the global leaderboard, but via a completely other method, see the git history
     solve(input.iter().map(|&(d, n, _color)| (d, n)))
 }
 
 #[aoc(day18, part2, jorendorff)]
-fn part_2(input: &Input) -> i128 {
+fn part_2(input: &Input) -> i64 {
     // #220 on the global leaderboard
     solve(input.iter().map(|&(_d, _n, c)| (c as usize & 15, c >> 4)))
 }
