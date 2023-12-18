@@ -17,14 +17,16 @@ fn solve(instructions: impl IntoIterator<Item=(usize, u32)>) -> i128 {
     // `area` is the (directed) area of the region bounded by this line.
     let mut area = 0i128;
 
-    // `border` is the area of the region inside the trench, but outside the chalk line. Note:
-    // Since this is half a meter wide, we should count half; instead we count the full amount when
-    // going "right" and "down", and count nothing when going "left" or "up". It balances out since
-    // the path is a loop.
+    // `border` is the area of the region inside the trench, but outside the chalk line. Two hacks:
     //
-    // The reason we start with a value of 1, and not 0, is wild: we undercount the border region
-    // by a quarter square at each exterior corner, and overcount by a quarter square at each
-    // interior corner. A loop must have 4 more exterior corners than interior ones.
+    // 1.  Since this border is half a meter wide, we should count half the distance traveled.
+    //     Instead, we count the full amount when going "right" and "down", and nothing when going
+    //     "left" or "up". It balances out since the path is a loop.
+    //
+    // 2.  Counting the distance traveled *misses* a quarter square at each exterior corner, and it
+    //     overcounts by a quarter square at each interior corner! Fortunately a loop has exactly 4
+    //     more exterior corners than interior ones, so the error is always exactly 1. We can thus
+    //     fix it by initializing `border` to 1.
     let mut border = 1;
 
     let mut x = 0i128;
