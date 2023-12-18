@@ -82,8 +82,7 @@ fn part_2(input: &Input) -> usize {
             return cost;
         }
         for dir1 in [LEFT, RIGHT, UP, DOWN] {
-            if dir1 != reverse(dir) && ((dir1 == dir && count < 10) || (dir1 != dir && count >= 4))
-            {
+            if (dir1 == dir && count < 10) || (dir1 != dir && dir1 != reverse(dir) && count >= 4) {
                 let r1 = bump_row(r, dir1);
                 let c1 = bump_col(c, dir1);
 
