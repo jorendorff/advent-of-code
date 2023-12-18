@@ -1,100 +1,68 @@
 use aoc_parse::{parser, prelude::*};
 use aoc_runner_derive::*;
 
-use std::collections::*;
-use adlib::*;
-
-type Input = Vec<(Dir, usize, u32)>;
+type Input = Vec<(usize, u32, u32)>;
 
 #[aoc_generator(day18, part1, jorendorff)]
 #[aoc_generator(day18, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Input> {
     let p = parser!(lines(
-        d:{'R' => Right, 'L' => Left, 'U' => Up, 'D' => Down} " " n:usize " (#" c:u32_hex ")" => (d, n, c)
+        d:char_of("RDLU") " " n:u32 " (#" c:u32_hex ")" => (d, n, c)
     ));
     Ok(p.parse(text)?)
 }
 
-#[aoc(day18, part1, jorendorff)]
-fn part_1(input: &Input) -> usize {
-    // #276 on the global leaderboard
-    let mut visited = HashSet::new();
-
-    let mut edges = HashSet::new();
-
-    let mut p = Point { row: 500, col: 500 };
-    visited.insert(p);
-    for &(d, n, _c) in input {
-        for _ in 0..n {
-            if d == Down {
-                edges.insert(p);
-            }
-            p += d;
-            visited.insert(p);
-            if d == Up {
-                edges.insert(p);
-            }
-        }
-    }
-
-    let mut count = visited.len();
-    for r in 0..1000 {
-        let mut inside = false;
-        for c in 0..1000 {
-            let q = Point { row: r, col: c};
-            if edges.contains(&q) {
-                inside = !inside;
-            } else if inside && !visited.contains(&q) {
-                count += 1;
-            }
-        }
-    }
-
-    count
-}
-
-#[aoc(day18, part2, jorendorff)]
-fn part_2(input: &Input) -> i128 {
-    // #220 on the global leaderboard
+fn solve(instructions: impl IntoIterator<Item=(usize, u32)>) -> i128 {
+    // Imagine the digger draws a line in chalk as it goes, right in the center of the trench.
+    // `area` is the (directed) area of the region bounded by this line.
     let mut area = 0i128;
 
-    let mut visited = 1;
+    // `border` is the area of the region inside the trench, but outside the chalk line. Note:
+    // Since this is half a meter wide, we should count half; instead we count the full amount when
+    // going "right" and "down", and count nothing when going "left" or "up". It balances out since
+    // the path is a loop.
+    //
+    // The reason we start with a value of 1, and not 0, is wild: we undercount the border region
+    // by a quarter square at each exterior corner, and overcount by a quarter square at each
+    // interior corner. A loop must have 4 more exterior corners than interior ones.
+    let mut border = 1;
 
     let mut x = 0i128;
-    let mut y = 0i128;
 
-    let mut prev_dir = 50;
-    for (_d, _n, c) in input {
-        let n = (c >> 4) as i128;
-        let d = c & 15;
-        assert_ne!(d, prev_dir);
-        prev_dir = d;
-        match d {
+    for (dir, n) in instructions {
+        let n = n as i128;
+        match dir {
             0 => {
                 x += n;
-                visited += n;
+                border += n;
             }
             1 => {
-                y += n;
-                visited += n;
+                border += n;
                 area += (i64::MAX as i128 - x) * n;
-                //area2 += (i64::MAX as i128 - x) * n;
             }
             2 => {
                 x -= n;
             }
             3 => {
-                y -= n;
                 area -= (i64::MAX as i128 - x) * n;
-                //area2 -= (i64::MAX as i128 - x + 1) * n;
             }
             _ => panic!(),
-        };
+        }
     }
 
-    println!("{x} {y}");
+    area.abs() + border
+}
 
-    area.abs() + visited
+#[aoc(day18, part1, jorendorff)]
+fn part_1(input: &Input) -> i128 {
+    // #276 on the global leaderboard, but via a completely other method, see the git history
+    solve(input.iter().map(|&(d, n, _color)| (d, n)))
+}
+
+#[aoc(day18, part2, jorendorff)]
+fn part_2(input: &Input) -> i128 {
+    // #220 on the global leaderboard
+    solve(input.iter().map(|&(_d, _n, c)| (c as usize & 15, c >> 4)))
 }
 
 #[cfg(test)]
