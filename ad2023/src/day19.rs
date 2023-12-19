@@ -17,16 +17,9 @@ struct RuleSet {
     rules: HashMap<String, Vec<Rule>>,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-struct Part {
-    x: u64,
-    m: u64,
-    a: u64,
-    s: u64,
-}
+type Part = [u64; 4];
 
-#[aoc_generator(day19, part1, jorendorff)]
-#[aoc_generator(day19, part2, jorendorff)]
+#[aoc_generator(day19, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Input> {
     let p = parser!(
         rules:section(lines(
@@ -39,9 +32,9 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
             "}"
         ))
         parts:section(lines(
-            "{x=" x:u64 ",m=" m:u64 ",a=" a:u64 ",s=" s:u64 "}" => Part {x, m, a, s}
+            "{x=" x:u64 ",m=" m:u64 ",a=" a:u64 ",s=" s:u64 "}" => [x, m, a, s]
         ))
-            => (RuleSet { rules: rules.into_iter().collect() }, parts)
+        => (RuleSet { rules: rules.into_iter().collect() }, parts)
     );
     Ok(p.parse(text)?)
 }
@@ -53,13 +46,13 @@ impl RuleSet {
             for rule in self.workflow(name) {
                 match rule {
                     Rule::Gt(a, b, s) => {
-                        if part.get(*a) > *b {
+                        if part[*a] > *b {
                             name = s;
                             break;
                         }
                     }
                     Rule::Lt(a, b, s) => {
-                        if part.get(*a) < *b {
+                        if part[*a] < *b {
                             name = s;
                             break;
                         }
@@ -131,14 +124,8 @@ impl RuleSet {
     }
 }
 
-impl Part {
-    fn rating(&self) -> u64 {
-        self.x + self.m + self.a + self.s
-    }
-
-    fn get(&self, attr: usize) -> u64 {
-        [self.x, self.m, self.a, self.s][attr]
-    }
+fn rating(part: &[u64; 4]) -> u64 {
+    part.iter().copied().sum()
 }
 
 #[aoc(day19, part1, jorendorff)]
@@ -150,7 +137,7 @@ fn part_1(input: &Input) -> u64 {
         .iter()
         .copied()
         .filter(|part| ruleset.accept(part))
-        .map(|part| part.rating())
+        .map(|part| rating(&part))
         .sum()
 }
 
