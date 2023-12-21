@@ -17,6 +17,7 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
 }
 
 fn solve_1(grid: &Input, count: usize) -> usize {
+    // #628 on the global leaderboard
     let mut grid = grid.clone();
     for _ in 0..count {
         for r in 0..grid.num_rows() {
