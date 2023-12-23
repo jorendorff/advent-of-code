@@ -1,6 +1,6 @@
-use std::collections::{VecDeque, HashSet, HashMap};
 use aoc_parse::{parser, prelude::*};
 use aoc_runner_derive::*;
+use std::collections::{HashMap, HashSet, VecDeque};
 
 #[derive(Debug, Clone, Copy)]
 struct Point(u64, u64, u64);
@@ -20,7 +20,7 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
 fn brick_name(id: usize) -> String {
     const NAMES: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     if id < NAMES.len() {
-        NAMES[id..id+1].to_string()
+        NAMES[id..id + 1].to_string()
     } else {
         format!("B{id}")
     }
@@ -28,7 +28,11 @@ fn brick_name(id: usize) -> String {
 
 #[aoc(day22, part1, jorendorff)]
 fn part_1(input: &Input) -> usize {
-    let mut bricks = input.iter().enumerate().map(|(i, &(p, q))| (i, p, q)).collect::<Vec<_>>();
+    let mut bricks = input
+        .iter()
+        .enumerate()
+        .map(|(i, &(p, q))| (i, p, q))
+        .collect::<Vec<_>>();
     bricks.sort_by_key(|(_i, p, q)| p.2.min(q.2));
     let mut map: HashMap<(u64, u64), (usize, u64)> = HashMap::new();
 
@@ -37,17 +41,20 @@ fn part_1(input: &Input) -> usize {
 
     for &(i, p, q) in bricks.iter() {
         println!("Brick {} {p:?}~{q:?}", brick_name(i));
-        
+
         let Point(xlo, ylo, _) = p;
         let Point(xhi, yhi, _) = q;
         assert!(xlo <= xhi);
         assert!(ylo <= yhi);
-        let floor: u64 = (xlo..=xhi).flat_map(|x| {
-            let my_map = &map;
-            (ylo..=yhi).map(move |y| -> u64 {
-                my_map.get(&(x, y)).copied().unwrap_or((usize::MAX, 0)).1
+        let floor: u64 = (xlo..=xhi)
+            .flat_map(|x| {
+                let my_map = &map;
+                (ylo..=yhi).map(move |y| -> u64 {
+                    my_map.get(&(x, y)).copied().unwrap_or((usize::MAX, 0)).1
+                })
             })
-        }).max().unwrap();
+            .max()
+            .unwrap();
 
         println!("Brick {} ends up at z={}", brick_name(i), floor + 1);
 
@@ -56,7 +63,11 @@ fn part_1(input: &Input) -> usize {
             for y in ylo..=yhi {
                 if let Some(&(piece, ht)) = map.get(&(x, y)) {
                     if ht == floor {
-                        println!("Brick {} is resting on brick {}", brick_name(i), brick_name(piece));
+                        println!(
+                            "Brick {} is resting on brick {}",
+                            brick_name(i),
+                            brick_name(piece)
+                        );
                         deps.entry(i).or_default().insert(piece);
                     }
                 }
@@ -70,7 +81,11 @@ fn part_1(input: &Input) -> usize {
         if xs.len() == 1 {
             let supporter = xs.into_iter().next().unwrap();
             has_sole_dependees[supporter] = true;
-            println!("Brick {} cannot be disintegrated; brick {} would fall", brick_name(supporter), brick_name(i));
+            println!(
+                "Brick {} cannot be disintegrated; brick {} would fall",
+                brick_name(supporter),
+                brick_name(i)
+            );
         }
     }
 
@@ -79,7 +94,11 @@ fn part_1(input: &Input) -> usize {
 
 #[aoc(day22, part2, jorendorff)]
 fn part_2(input: &Input) -> usize {
-    let mut bricks = input.iter().enumerate().map(|(i, &(p, q))| (i, p, q)).collect::<Vec<_>>();
+    let mut bricks = input
+        .iter()
+        .enumerate()
+        .map(|(i, &(p, q))| (i, p, q))
+        .collect::<Vec<_>>();
     bricks.sort_by_key(|(_i, p, q)| p.2.min(q.2));
     let mut map: HashMap<(u64, u64), (usize, u64)> = HashMap::new();
 
@@ -88,20 +107,23 @@ fn part_2(input: &Input) -> usize {
 
     // (i, xs) means i supports each of the bricks in xs (the inverse relation)
     let mut supports: HashMap<usize, HashSet<usize>> = HashMap::new();
-    
+
     for &(i, p, q) in bricks.iter() {
         println!("Brick {} {p:?}~{q:?}", brick_name(i));
-        
+
         let Point(xlo, ylo, _) = p;
         let Point(xhi, yhi, _) = q;
         assert!(xlo <= xhi);
         assert!(ylo <= yhi);
-        let floor: u64 = (xlo..=xhi).flat_map(|x| {
-            let my_map = &map;
-            (ylo..=yhi).map(move |y| -> u64 {
-                my_map.get(&(x, y)).copied().unwrap_or((usize::MAX, 0)).1
+        let floor: u64 = (xlo..=xhi)
+            .flat_map(|x| {
+                let my_map = &map;
+                (ylo..=yhi).map(move |y| -> u64 {
+                    my_map.get(&(x, y)).copied().unwrap_or((usize::MAX, 0)).1
+                })
             })
-        }).max().unwrap();
+            .max()
+            .unwrap();
 
         println!("Brick {} ends up at z={}", brick_name(i), floor + 1);
 
@@ -110,7 +132,11 @@ fn part_2(input: &Input) -> usize {
             for y in ylo..=yhi {
                 if let Some(&(piece, ht)) = map.get(&(x, y)) {
                     if ht == floor {
-                        println!("Brick {} is resting on brick {}", brick_name(i), brick_name(piece));
+                        println!(
+                            "Brick {} is resting on brick {}",
+                            brick_name(i),
+                            brick_name(piece)
+                        );
                         deps.entry(i).or_default().insert(piece);
                         supports.entry(piece).or_default().insert(i);
                     }
@@ -120,10 +146,17 @@ fn part_2(input: &Input) -> usize {
         }
     }
 
-    bricks.iter().map(|&(i, _p, _q)| how_many_would_fall(deps.clone(), supports.clone(), i)).sum()
+    bricks
+        .iter()
+        .map(|&(i, _p, _q)| how_many_would_fall(deps.clone(), supports.clone(), i))
+        .sum()
 }
 
-fn how_many_would_fall(mut deps: HashMap<usize, HashSet<usize>>, mut supports: HashMap<usize, HashSet<usize>>, i: usize) -> usize {
+fn how_many_would_fall(
+    mut deps: HashMap<usize, HashSet<usize>>,
+    mut supports: HashMap<usize, HashSet<usize>>,
+    i: usize,
+) -> usize {
     let mut todo = VecDeque::new();
     todo.push_back(i);
 
@@ -142,7 +175,6 @@ fn how_many_would_fall(mut deps: HashMap<usize, HashSet<usize>>, mut supports: H
     }
     fall_count
 }
-
 
 #[cfg(test)]
 mod tests {
