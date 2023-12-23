@@ -10,6 +10,8 @@ pub enum Dir {
 
 pub use Dir::*;
 
+pub const DIRS: [Dir; 4] = [Right, Up, Left, Down];
+
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub struct Point {
     pub row: usize,
@@ -92,6 +94,25 @@ impl<T> Grid<T> {
 
     pub fn has(&self, p: Point) -> bool {
         p.row < self.num_rows() && p.col < self.num_cols()
+    }
+
+    pub fn get(&self, p: Point) -> Option<&T> {
+        if self.has(p) {
+            Some(&self[p])
+        } else {
+            None
+        }
+    }
+
+    pub fn cells(&self) -> impl Iterator<Item=(Point, &T)> + '_ {
+        self.data
+            .iter()
+            .enumerate()
+            .flat_map(|(r, row)| {
+                row.iter()
+                    .enumerate()
+                    .map(move |(c, elem)| (Point {row: r, col: c}, elem))
+            })
     }
 }
 
