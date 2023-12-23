@@ -245,7 +245,7 @@ fn count_cardinal_strip(grid: &Input, distance_grid: &Grid<u64>, dir: Dir, mut s
         }
         steps -= grid_size;
     }
-    
+
     total
 }
 
@@ -351,7 +351,6 @@ mod tests {
 .....
 ";
 
-    
     const EXAMPLE: &str = "\
 ...........
 .....###.#.
@@ -382,7 +381,7 @@ mod tests {
         assert_eq!(solve_2(&grid, 6), 49);
         assert_eq!(solve_2(&grid, 7), 64);
         assert_eq!(solve_2(&grid, 100), 10201);
-        
+
         let grid = parse_input(SILLY_EXAMPLE_2).unwrap();
         assert_eq!(solve_2(&grid, 1), 4);
         assert_eq!(solve_2(&grid, 2), 9);
@@ -392,7 +391,7 @@ mod tests {
         assert_eq!(solve_2(&grid, 6), 49);
         assert_eq!(solve_2(&grid, 7), 64);
         assert_eq!(solve_2(&grid, 100), 10201);
-        
+
         let grid = parse_input(SILLY_EXAMPLE_3).unwrap();
         assert_eq!(solve_2(&grid, 1), 4);
         assert_eq!(solve_2(&grid, 2), 8);
@@ -406,11 +405,11 @@ mod tests {
         assert_eq!(solve_2(&grid, 3), 12);
         assert_eq!(solve_2(&grid, 4), 18);
         assert_eq!(solve_2(&grid, 5), 26);
-        assert_eq!(solve_2(&grid, 6), 18+19);
+        assert_eq!(solve_2(&grid, 6), 18 + 19);
     }
 
     #[test]
-    fn test_part_2() {        
+    fn test_part_2() {
         let grid = parse_input(EXAMPLE).unwrap();
         assert_eq!(solve_2(&grid, 6), 16);
         assert_eq!(solve_2(&grid, 10), 50);
