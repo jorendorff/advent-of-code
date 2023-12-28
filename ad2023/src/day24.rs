@@ -122,141 +122,85 @@ fn parse_input_2(text: &str) -> anyhow::Result<Vec<Ray>> {
     Ok(p.parse(text)?)
 }
 
-fn gradient<F>(mut loss: F, my_ray: Ray) -> Ray
+fn try_gradient_descent<F>(mut f: F, start: (f64, f64)) -> (f64, f64)
 where
-    F: FnMut(Ray) -> f64,
+    F: FnMut(f64, f64) -> f64,
 {
-    let h = 0.1;
+    let (mut t0, mut t1) = start;
 
-    let mut left_ray = my_ray;
-    left_ray.origin.x = my_ray.origin.x - h;
-    let mut right_ray = my_ray;
-    right_ray.origin.x = my_ray.origin.x + h;
-    let dx = (loss(right_ray) - loss(left_ray)) / (2.0 * h);
+    let mut rate = (t0 + t1) / 2.0;
+    assert!(rate > 0.0);
 
-    let mut left_ray = my_ray;
-    left_ray.origin.y = my_ray.origin.y - h;
-    let mut right_ray = my_ray;
-    right_ray.origin.y = my_ray.origin.y + h;
-    let dy = (loss(right_ray) - loss(left_ray)) / (2.0 * h);
+    let num_steps = 40000;
+    let num_octaves = rate.log(2.0) + 32.0;
+    let decay = 0.5f64.powf(num_octaves / num_steps as f64);
+    for _ in 0..num_steps {
+        // println!("current (t0, t1): {t0}, {t1}");
+        // let current_loss = f(t0, t1);
+        // println!("After {i} steps, loss is {}", current_loss);
 
-    let mut left_ray = my_ray;
-    left_ray.origin.z = my_ray.origin.z - h;
-    let mut right_ray = my_ray;
-    right_ray.origin.z = my_ray.origin.z + h;
-    let dz = (loss(right_ray) - loss(left_ray)) / (2.0 * h);
+        // compute gradient
+        let h = 0.1;
+        let d0 = (f(t0 + h, t1) - f(t0 - h, t1)) / (2.0 * h);
+        let d1 = (f(t0, t1 + h) - f(t0, t1 - h)) / (2.0 * h);
 
-    let mut left_ray = my_ray;
-    left_ray.vel.x = my_ray.vel.x - h;
-    let mut right_ray = my_ray;
-    right_ray.vel.x = my_ray.vel.x + h;
-    let dvx = (loss(right_ray) - loss(left_ray)) / (2.0 * h);
+        // normalize it
+        let m = d0.hypot(d1);
+        let d0 = d0 / m;
+        let d1 = d1 / m;
+        
+        t0 -= rate * d0;
+        t0 = t0.max(0.0);
+        t1 -= rate * d1;
+        t1 = t1.max(0.0);
 
-    let mut left_ray = my_ray;
-    left_ray.vel.y = my_ray.vel.y - h;
-    let mut right_ray = my_ray;
-    right_ray.vel.y = my_ray.vel.y + h;
-    let dvy = (loss(right_ray) - loss(left_ray)) / (2.0 * h);
-
-    let mut left_ray = my_ray;
-    left_ray.vel.z = my_ray.vel.z - h;
-    let mut right_ray = my_ray;
-    right_ray.vel.z = my_ray.vel.z + h;
-    let dvz = (loss(right_ray) - loss(left_ray)) / (2.0 * h);
-
-    Ray {
-        origin: Vec3 {
-            x: dx,
-            y: dy,
-            z: dz,
-        },
-        vel: Vec3 {
-            x: dvx,
-            y: dvy,
-            z: dvz,
-        },
+        rate *= decay;
+        assert_ne!(decay, 0.0);
     }
+
+    (t0, t1)
 }
 
-fn try_gradient_descent(rays: &[Ray], start: Ray) -> (Ray, f64) {
-    let mut my_ray = start;
+fn solve(hs0: Ray, hs1: Ray, rest: &[Ray]) -> Ray {
+    // By gradient descent. Given any two hailstones, the solution must pass through both at
+    // distinct times, say t0 and t1. From any pair of values (t0, t1), we can then construct
+    // the unique ray that hits stone 0 at time t0, and stone 1 at time t1.
+    let ray = move |t0: f64, t1: f64| -> Ray {
+        assert_ne!(t0, t1);
+        let p0 = hs0.origin + t0 * hs0.vel;
+        let p1 = hs1.origin + t1 * hs1.vel;
+        let vel = (p1 - p0) / (t1 - t0);
+        let origin = p0 - t0 * vel;
+        Ray { origin, vel }
+    };
 
-    let loss = |my_ray| {
-        rays.iter()
-            .map(|r| r.nearest_approach_squared(my_ray))
+    // Define a function f(t0, t1) to be 0 if that ray hits all stones, and positive otherwise,
+    // characterizing the badness of the choice of t0 and t1.
+    let f = |t0, t1| {
+        let r = ray(t0, t1);
+        rest.iter()
+            .map(|hailstone| r.nearest_approach_squared(*hailstone))
             .sum::<f64>()
     };
 
-    let mut p_rate = 1.0e-4f64; // learning rates
-    let mut v_rate = 1.0e-4f64; // learning rates
-    let num_steps = 4000;
-    let num_octaves = 16;
-    let decay = 0.5f64.powf(num_octaves as f64 / num_steps as f64);
-    for i in 0..num_steps {
-        println!("current ray: {my_ray:?}");
-        let current_loss = loss(my_ray);
-        println!("After {i} steps, loss is {}", loss(my_ray));
+    // Now find values (t0, t1) that minimize f.
+    // We try twice because I suspect there are two local minima.
+    let ta = 100.0;
+    let tb = 1e11;
+    let ab = try_gradient_descent(f, (ta, tb));
+    let fab = f(ab.0, ab.1);
+    let ba = try_gradient_descent(f, (tb, ta));
+    let fba = f(ba.0, ba.1);
+    let (t0, t1) = if fab < fba { ab } else { ba };
 
-        let g = gradient(loss, my_ray);
-
-        dbg!(v_rate);
-        dbg!(g.vel);
-        dbg!(v_rate / current_loss * g.vel);
-        //println!("Gradient is: {g:?}, v_rate * g.vel = {:?}", v_rate * g.vel);
-        
-        my_ray.origin -= p_rate / current_loss.sqrt() * g.origin;
-        my_ray.vel -= v_rate / current_loss.sqrt() * g.vel;
-
-        p_rate *= decay;
-        v_rate *= decay;
-    }
-
-    (my_ray, loss(my_ray))
+    ray(t0, t1)
 }
 
 #[aoc(day24, part2, jorendorff)]
 fn part_2(rays: &[Ray]) -> i64 {
-    let total = rays.iter().fold(Ray::default(), |acc, ray| Ray {
-        origin: acc.origin + ray.origin,
-        vel: acc.vel + ray.vel,
-    });
-
-    let n = rays.len() as f64;
-    let start = Ray {
-        origin: total.origin / n,
-        vel: total.vel / n,
-    };
-
-    let (best_ray, best_loss) = [
-        (-1, -1, -1),
-        (-1, -1, 1),
-        (-1, 1, -1),
-        (-1, 1, 1),
-        (1, -1, -1),
-        (1, -1, 1),
-        (1, 1, -1),
-        (1, 1, 1),
-    ]
-    .into_iter()
-    .map(|(x, y, z)| {
-        try_gradient_descent(
-            rays,
-            Ray {
-                origin: start.origin,
-                vel: Vec3 {
-                    x: x as f64 * start.vel.x,
-                    y: y as f64 * start.vel.y,
-                    z: z as f64 * start.vel.z,
-                },
-            },
-        )
-    })
-    .min_by(|(_ray1, loss1), (_ray2, loss2)| loss1.partial_cmp(loss2).unwrap())
-    .unwrap();
-
-    println!("{best_ray:?} loss: {best_loss}");
-
-    (best_ray.origin.x + best_ray.origin.y + best_ray.origin.z).round() as i64
+    assert!(rays.len() > 2);
+    let ray = solve(rays[0], rays[1], &rays[2..]);
+    (ray.origin.x + ray.origin.y + ray.origin.z).round() as i64
 }
 
 #[cfg(test)]
