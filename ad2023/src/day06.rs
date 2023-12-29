@@ -19,9 +19,7 @@ fn part_1(input: &Input) -> u64 {
         .map(|(t, d)| {
             let t = *t;
             let d = *d;
-            (0..=t).filter(|&t0| {
-                (t - t0) * t0 > d
-            }).count() as u64
+            (0..=t).filter(|&t0| (t - t0) * t0 > d).count() as u64
         })
         .product()
 }
@@ -47,15 +45,11 @@ fn part_2(input: &(u64, u64)) -> u64 {
 
     // I had low enough confidence in my ability to get the quadratic formula right under pressure
     // that I had the program check for me:
-    let low_count = (low - 3 .. low + 3).filter(|&t0| {
-        (t - t0) * t0 > d
-    }).count() as u64;
+    let low_count = (low - 3..low + 3).filter(|&t0| (t - t0) * t0 > d).count() as u64;
     assert_ne!(low_count, 0);
     assert_ne!(low_count, 6);
 
-    let hi_count = (hi - 3 .. hi + 3).filter(|&t0| {
-        (t - t0) * t0 > d
-    }).count() as u64;
+    let hi_count = (hi - 3..hi + 3).filter(|&t0| (t - t0) * t0 > d).count() as u64;
     assert_ne!(hi_count, 0);
     assert_ne!(hi_count, 6);
 

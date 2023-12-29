@@ -42,7 +42,11 @@ fn part_1(input: &Input) -> u64 {
     // 416 on the global leaderboard
     let mut input = input.clone();
     input.sort_by_key(hand_key);
-    input.into_iter().enumerate().map(|(index, (_cards, bid))| bid * (index as u64 + 1)).sum()
+    input
+        .into_iter()
+        .enumerate()
+        .map(|(index, (_cards, bid))| bid * (index as u64 + 1))
+        .sum()
 }
 
 fn hand_key_2(hand: &(Vec<i32>, u64)) -> (Vec<usize>, Vec<i32>) {
@@ -71,7 +75,11 @@ fn part_2(input: &Input) -> u64 {
     // 459 on the global leaderboard
     let mut input = input.clone();
     input.sort_by_key(hand_key_2);
-    input.into_iter().enumerate().map(|(index, (_cards, bid))| bid * (index as u64 + 1)).sum()
+    input
+        .into_iter()
+        .enumerate()
+        .map(|(index, (_cards, bid))| bid * (index as u64 + 1))
+        .sum()
 }
 
 #[cfg(test)]

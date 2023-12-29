@@ -168,7 +168,7 @@ SJLL7
 |F--J
 LJ.LJ
 ";
-    
+
     #[test]
     fn test_part_1() {
         assert_eq!(part_1(&parse_input(EXAMPLE1).unwrap()), 4);

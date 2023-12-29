@@ -23,7 +23,6 @@ fn predict(nums: &[i64]) -> i64 {
     total
 }
 
-
 #[aoc(day9, part1, jorendorff)]
 fn part_1(input: &Input) -> i64 {
     // 245 on the global leaderboard
@@ -33,11 +32,14 @@ fn part_1(input: &Input) -> i64 {
 #[aoc(day9, part2, jorendorff)]
 fn part_2(input: &Input) -> i64 {
     // 206 on the global leaderboard
-    input.iter().map(|row| {
-        let mut row = row.to_vec();
-        row.reverse();
-        predict(&row)
-    }).sum()
+    input
+        .iter()
+        .map(|row| {
+            let mut row = row.to_vec();
+            row.reverse();
+            predict(&row)
+        })
+        .sum()
 }
 
 #[cfg(test)]

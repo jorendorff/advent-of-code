@@ -1,4 +1,4 @@
-use std::ops::{Add, Mul, Sub, SubAssign, Div};
+use std::ops::{Add, Div, Mul, Sub, SubAssign};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Vec3 {

@@ -148,7 +148,7 @@ where
         let m = d0.hypot(d1);
         let d0 = d0 / m;
         let d1 = d1 / m;
-        
+
         t0 -= rate * d0;
         t0 = t0.max(0.0);
         t1 -= rate * d1;

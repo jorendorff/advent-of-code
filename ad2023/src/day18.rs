@@ -12,7 +12,7 @@ fn parse_input(text: &str) -> anyhow::Result<Input> {
     Ok(p.parse(text)?)
 }
 
-fn solve(instructions: impl IntoIterator<Item=(usize, u32)>) -> i64 {
+fn solve(instructions: impl IntoIterator<Item = (usize, u32)>) -> i64 {
     // Imagine the digger draws a line in chalk as it goes, right in the center of the trench.
     // `area` is the (directed) area of the region bounded by this line.
     let mut area = 0i64;
