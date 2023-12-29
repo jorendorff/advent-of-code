@@ -7,7 +7,6 @@ use std::collections::{HashMap, HashSet, VecDeque};
 type Input = HashMap<String, Vec<String>>;
 
 #[aoc_generator(day25, part1, jorendorff)]
-#[aoc_generator(day25, part2, jorendorff)]
 fn parse_input(text: &str) -> anyhow::Result<Input> {
     let p = parser!(lines(
         string(alpha+) ": " repeat_sep(string(alpha+), ' ')
@@ -138,11 +137,6 @@ fn part_1(map: &Input) -> usize {
     one_group * (map.len() - one_group)
 }
 
-#[aoc(day25, part2, jorendorff)]
-fn part_2(_input: &Input) -> usize {
-    0
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -166,10 +160,5 @@ frs: qnr lhk lsr
     #[test]
     fn test_part_1() {
         assert_eq!(part_1(&parse_input(EXAMPLE).unwrap()), 54);
-    }
-
-    #[test]
-    fn test_part_2() {
-        assert_eq!(part_2(&parse_input(EXAMPLE).unwrap()), 0);
     }
 }
