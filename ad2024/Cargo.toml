@@ -1,0 +1,11 @@
+[package]
+name = "ad2024"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+aoc-runner = "0.3"
+aoc-runner-derive = "0.3"
+aoc-parse = { path = "../../aoc-parse" }
+anyhow = "1.0.75"
+num = "0.4"
