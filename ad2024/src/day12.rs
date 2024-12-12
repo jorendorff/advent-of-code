@@ -54,7 +54,6 @@ fn part_1(input: &Input) -> usize {
                         }
                     }
                 }
-                println!("{ch}, a={area} p={perimeter}");
                 total += perimeter * area;
             }
         }
@@ -117,12 +116,10 @@ fn part_2(input: &Input) -> usize {
                         count(segs)
                     })
                     .sum::<usize>();
-                println!("{ch}, area={area}, num_sides={num_sides}");
                 total += num_sides * area;
             }
         }
     }
-    println!();
     total
 }
 
