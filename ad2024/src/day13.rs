@@ -1,3 +1,5 @@
+// Part 1 rank 386.
+
 use aoc_parse::{parser, prelude::*};
 use aoc_runner_derive::*;
 
