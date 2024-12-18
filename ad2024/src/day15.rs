@@ -120,9 +120,6 @@ fn part_2(input: &Input) -> u64 {
     }
     
     for (dr, dc) in moves {
-        let r_next = (r_bot as i64 + dr) as usize;
-        let c_next = (c_bot as i64 + dc) as usize;
-
         fn enqueue(
             grid: &[Vec<char>],
             junk: &mut HashSet<(char, usize, usize)>,
