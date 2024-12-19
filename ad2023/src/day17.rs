@@ -1,7 +1,6 @@
+use pathfinding::directed::dijkstra;
 use aoc_parse::{parser, prelude::*};
 use aoc_runner_derive::*;
-use std::cmp::Reverse;
-use std::collections::BinaryHeap;
 
 type Input = Vec<Vec<usize>>;
 
@@ -41,30 +40,27 @@ fn part_1(input: &Input) -> usize {
     let h = input.len();
     let w = input[0].len();
 
-    let mut seen = vec![vec![[[false; 4]; 4]; w]; h];
-    let mut todo = BinaryHeap::new();
-    todo.push(Reverse((0, 0, 0, 0, 0))); // cost, row, col, dir, count
+    dijkstra::dijkstra(
+        &(0, 0, 0, 0),  // row, col, dir, count
+        |&(r, c, dir, count)| {
+            [LEFT, RIGHT, UP, DOWN].into_iter().flat_map(move |dir1| {
+                if dir1 != reverse(dir) && (dir1 != dir || count < 3) {
+                    let r1 = bump_row(r, dir1);
+                    let c1 = bump_col(c, dir1);
 
-    while let Some(Reverse((cost, r, c, dir, count))) = todo.pop() {
-        if r == h - 1 && c == w - 1 {
-            return cost;
-        }
-        for dir1 in [LEFT, RIGHT, UP, DOWN] {
-            if dir1 != reverse(dir) && (dir1 != dir || count < 3) {
-                let r1 = bump_row(r, dir1);
-                let c1 = bump_col(c, dir1);
-
-                let count1 = if dir1 == dir { count + 1 } else { 1 };
-                if r1 < h && c1 < w && !seen[r1][c1][dir1][count1] {
-                    let cost1 = cost + input[r1][c1];
-                    seen[r1][c1][dir1][count1] = true;
-                    todo.push(Reverse((cost1, r1, c1, dir1, count1)));
+                    let count1 = if dir1 == dir { count + 1 } else { 1 };
+                    if r1 < h && c1 < w {
+                        let cost = input[r1][c1];
+                        return Some(((r1, c1, dir1, count1), cost));
+                    }
                 }
-            }
-        }
-    }
-
-    panic!("no solution");
+                None
+            })
+        },
+        |&(r, c, _dir, _count)| r == h - 1 && c == w - 1,
+    )
+        .unwrap()
+        .1
 }
 
 #[aoc(day17, part2, jorendorff)]
@@ -73,30 +69,27 @@ fn part_2(input: &Input) -> usize {
     let h = input.len();
     let w = input[0].len();
 
-    let mut seen = vec![vec![[[false; 11]; 4]; w]; h];
-    let mut todo = BinaryHeap::new();
-    todo.push(Reverse((0, 0, 0, 0, 0))); // cost, row, col, dir, count
+    dijkstra::dijkstra(
+        &(0, 0, 0, 0), // row, col, dir, count
+        |&(r, c, dir, count)| {
+            [LEFT, RIGHT, UP, DOWN].into_iter()
+                .filter_map(move |dir1| {
+                    if (dir1 == dir && count < 10) || (dir1 != dir && dir1 != reverse(dir) && count >= 4) {
+                        let r1 = bump_row(r, dir1);
+                        let c1 = bump_col(c, dir1);
 
-    while let Some(Reverse((cost, r, c, dir, count))) = todo.pop() {
-        if r == h - 1 && c == w - 1 && count >= 4 {
-            return cost;
-        }
-        for dir1 in [LEFT, RIGHT, UP, DOWN] {
-            if (dir1 == dir && count < 10) || (dir1 != dir && dir1 != reverse(dir) && count >= 4) {
-                let r1 = bump_row(r, dir1);
-                let c1 = bump_col(c, dir1);
-
-                let count1 = if dir1 == dir { count + 1 } else { 1 };
-                if r1 < h && c1 < w && !seen[r1][c1][dir1][count1] {
-                    let cost1 = cost + input[r1][c1];
-                    seen[r1][c1][dir1][count1] = true;
-                    todo.push(Reverse((cost1, r1, c1, dir1, count1)));
-                }
-            }
-        }
-    }
-
-    panic!("no solution");
+                        let count1 = if dir1 == dir { count + 1 } else { 1 };
+                        if r1 < h && c1 < w {
+                            return Some(((r1, c1, dir1, count1), input[r1][c1]));
+                        }
+                    }
+                    None
+                })
+        },
+        |&(r, c, _dir, count)| r == h - 1 && c == w - 1 && count >= 4,
+    )
+        .unwrap()
+        .1
 }
 
 #[cfg(test)]
