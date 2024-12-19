@@ -1,5 +1,7 @@
 // Part 2 rank 982
 
+use pathfinding::directed::dijkstra;
+
 use aoc_parse::{parser, prelude::*};
 use aoc_runner_derive::*;
 
@@ -18,33 +20,22 @@ fn do_part_1(input: &Input, size: usize, count: usize) -> Option<usize> {
         map[r][c] = 1;
     }
 
-    map[0][0] = 2;
-    let mut todo = vec![(0, 0)];
-    let mut steps = 0;
-    while !todo.is_empty() {
-        let mut next = vec![];
-        for (r, c) in todo {
-            if (r, c) == (size - 1, size - 1) {
-                return Some(steps);
-            }
-            let points = [
+    dijkstra::dijkstra(
+        &(0, 0),
+        |&(r, c): &(usize, usize)| {
+            [
                 (r, c + 1),
                 (r + 1, c),
                 (r, c.wrapping_sub(1)),
                 (r.wrapping_sub(1), c),
-            ];
-            for (rr, cc) in points {
-                if rr < size && cc < size && map[rr][cc] == 0 {
-                    next.push((rr, cc));
-                    map[rr][cc] = 2;
-                }
-            }
-        }
-
-        todo = next;
-        steps += 1;
-    }
-    None
+            ]
+            .into_iter()
+            .filter(|&(rr, cc)| rr < size && cc < size && map[rr][cc] == 0)
+            .map(|pair| (pair, 1usize))
+        },
+        |&(r, c)| (r, c) == (size - 1, size - 1),
+    )
+    .map(|(_path, cost)| cost)
 }
 
 #[aoc(day18, part1, jorendorff)]
