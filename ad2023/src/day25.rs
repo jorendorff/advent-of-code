@@ -97,7 +97,7 @@ fn connected_size(map: &Input, start: &str) -> usize {
 #[aoc(day25, part1, jorendorff)]
 fn part_1(map: &Input) -> usize {
     let mut counts: HashMap<(&str, &str), usize> = HashMap::new();
-    let p = (map.len() as f64).powf(-0.7);
+    let p = (map.len() as f64).powf(-0.3);
 
     println!("inverse p is {}", 1.0 / p);
 
