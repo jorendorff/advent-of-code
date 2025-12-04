@@ -32,25 +32,23 @@ def solve1 (input : Input) : Nat :=
 
 -- # Part 2
 
--- Append `bat` to `seq`, then remove any element of `seq`
--- to maximize the result.
-def boost (seq : Array Nat) (bat : Nat) (i : Nat) (hi : i < seq.size): Array Nat :=
-  if hi' : i + 1 < seq.size
-  then if seq[i] < seq[i + 1]
-       then seq[0:i] ++ seq[i + 1:] ++ #[bat]
-       else boost seq bat (i + 1) hi'
-  else if seq[i] < bat
-       then seq[0:i] ++ #[bat]
-       else seq
+def enumerate {a : Type} (xs : List a) : List (Nat × a) :=
+  (List.range xs.length).zip xs
+
+def handleDigit (len : Nat) (k : Nat) (acc : Array Nat) (item : Nat × Nat) : Array Nat :=
+  let ⟨i, digit⟩ := item
+  if _ : i + k < acc.size + len ∧ acc.size > 0 ∧ acc.back! < digit
+  then handleDigit len k acc.pop item
+  else if acc.size < k
+    then acc.push digit
+    else acc
+termination_by acc.size
 
 def bankJoltage' (bank : Array Nat) : Nat :=
-  let acc := fun (seqMax : Array Nat) (bat : Nat) => (
-    if h : seqMax.size < 12
-    then seqMax ++ #[bat]
-    else boost seqMax bat 0 (by omega)
-  )
-  let seqMax := Array.foldl acc #[] bank
-  Array.foldl (fun acc digit => 10 * acc + digit) 0 seqMax
+  bank.toList
+    |> enumerate
+    |> List.foldl (handleDigit bank.size 12) #[]
+    |> Array.foldl (fun acc digit => 10 * acc + digit) 0
 
 def solve2 (input : Input) : Nat :=
   (input.map bankJoltage').sum
