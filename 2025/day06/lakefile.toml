@@ -1,0 +1,10 @@
+name = "day06"
+version = "0.1.0"
+defaultTargets = ["day06"]
+
+[[lean_lib]]
+name = "Day06"
+
+[[lean_exe]]
+name = "day06"
+root = "Main"
