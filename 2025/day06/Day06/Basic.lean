@@ -23,22 +23,12 @@ deriving Repr
 
 -- # Input parser for part 1
 
-def op : Parser Op :=
-  (do skipChar '+'; return Op.add)
-  <|> (do skipChar '*'; return Op.mul)
-
 def lines {α : Type} (p : Parser α) : Parser (Array α) :=
-  many $ attempt do
-    let item <- p
-    skipChar '\n'
-    return item
+  many $ attempt (p <* skipChar '\n')
 
-def row : Parser (Array Nat) := do
-  let _ <- many $ skipChar ' '
-  let first <- digits
-  let nums <- manyCore (attempt do let _ <- many1 $ skipChar ' '; digits) #[first]
-  let _ <- many $ skipChar ' '
-  return nums
+def sp : Parser Unit := many (skipChar ' ') *> return ()
+
+def space : Parser Unit := many1 (skipChar ' ') *> return ()
 
 -- Parser combinator for lists with a separator.
 def sepBy1 {t : Type} (sep : Parser Unit) (elem : Parser t) : Parser (Array t) := do
@@ -46,9 +36,16 @@ def sepBy1 {t : Type} (sep : Parser Unit) (elem : Parser t) : Parser (Array t) :
   let last <- elem
   return items.push last
 
-def sp : Parser Unit := many (skipChar ' ') *> return ()
+def row : Parser (Array Nat) := do
+  sp
+  let first <- digits
+  let nums <- manyCore (attempt do let _ <- many1 $ skipChar ' '; digits) #[first]
+  sp
+  return nums
 
-def space : Parser Unit := many1 (skipChar ' ') *> return ()
+def op : Parser Op :=
+  (do skipChar '+'; return Op.add)
+  <|> (do skipChar '*'; return Op.mul)
 
 def parser1 : Parser Input := do
   let rows <- lines row
