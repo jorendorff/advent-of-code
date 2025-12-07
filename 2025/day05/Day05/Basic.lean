@@ -54,3 +54,11 @@ def solve2 (input : Input) : Nat :=
     (0, 0)
     input.fresh.qsortOrd
   total
+
+/-
+theorem solve2_correct (freshRanges : Array Range) :
+  let S := {id | ∃ r ∈ freshRanges, r.start ≤ id ∧ id < r.stop}
+  ∃ hS : S.Finite, solve2 fresh = hS.toFinset.card
+:= by
+  sorry
+-/
