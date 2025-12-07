@@ -4,19 +4,21 @@ open Std.Internal.Parsec.String
 
 -- Input parser
 
+abbrev Input := Array Int
+
 def parseLeft : Parser Int := do
   skipChar 'L'
   let n <- digits
   skipChar '\n'
-  return -(Int.ofNat n)
+  return -↑n
 
 def parseRight : Parser Int := do
   skipChar 'R'
   let n <- digits
   skipChar '\n'
-  return Int.ofNat n
+  return ↑n
 
-def parser : Parser (Array Int) :=
+def parser : Parser Input :=
   (parseLeft <|> parseRight).many
 
 -- Part 1
@@ -28,7 +30,7 @@ def step1 (state : Nat × Int) (move : Int) : Nat × Int :=
   let pos' := (pos + move) % numbers
   ⟨count + (if pos' == 0 then 1 else 0), pos'⟩
 
-def solve1 (input : Array Int) : Nat :=
+def solve1 (input : Input) : Nat :=
   let ⟨count, _⟩ := input.toList.foldl step1 ⟨0, 50⟩
   count
 
@@ -45,7 +47,7 @@ def tickify (move : Int) : List Int :=
   | Int.ofNat n => rep 1 n
   | Int.negSucc n => rep (-1) n.succ
 
-def solve2 (input : Array Int) : Nat :=
+def solve2 (input : Input) : Nat :=
   let ticks := input.toList.flatMap tickify
   let ⟨count, _⟩ := ticks.foldl step1 ⟨0, 50⟩
   count
