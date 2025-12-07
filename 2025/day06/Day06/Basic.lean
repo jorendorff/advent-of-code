@@ -23,33 +23,24 @@ deriving Repr
 
 -- # Input parser for part 1
 
-def lines {α : Type} (p : Parser α) : Parser (Array α) :=
-  many $ attempt (p <* skipChar '\n')
-
 def sp : Parser Unit := many (skipChar ' ') *> return ()
 
 def space : Parser Unit := many1 (skipChar ' ') *> return ()
 
+def nl : Parser Unit := skipChar '\n'
+
 -- Parser combinator for lists with a separator.
 def sepBy1 {t : Type} (sep : Parser Unit) (elem : Parser t) : Parser (Array t) := do
-  let items <- many $ attempt $ elem <* sep
-  let last <- elem
-  return items.push last
-
-def row : Parser (Array Nat) := do
-  sp
-  let first <- digits
-  let nums <- manyCore (attempt do let _ <- many1 $ skipChar ' '; digits) #[first]
-  sp
-  return nums
+  let h <- elem
+  manyCore (attempt $ sep *> elem) #[h]
 
 def op : Parser Op :=
   (do skipChar '+'; return Op.add)
   <|> (do skipChar '*'; return Op.mul)
 
 def parser1 : Parser Input := do
-  let rows <- lines row
-  let ops <- sp *> sepBy1 space op <* sp <* skipChar '\n'
+  let rows <- many $ attempt (sp *> sepBy1 space digits <* sp <* nl)
+  let ops <- sp *> sepBy1 space op <* sp <* nl
   eof
   return Input.mk ops rows
 
@@ -81,9 +72,7 @@ def repeatN (p : Parser α) (n : Nat) : Parser (Vector α n) :=
       return xs.push x
 
 def line (p: Parser α) (n : Nat) : Parser (Vector α n) := do
-  let elems <- repeatN p n
-  skipChar '\n'
-  return elems
+  repeatN p n <* nl
 
 def elidedSpace : Parser Char := do
   let some _nl <- peekWhen? (· == '\n') | fail "unexpected character"
@@ -113,14 +102,11 @@ def Grid.transpose (grid : Grid α) : Grid α :=
 def Grid.toString (grid : Grid Char) : String :=
   grid.rows.flatMap (·.toArray.push '\n') |>.toList |>.asString
 
-def nl : Parser Unit := skipChar '\n'
-
 def block : Parser (Op × Array Nat) := do
   let first <- sp *> digits
-  let op <- sp *> op
-  let _ <- sp <* nl
-  let rest <- lines (sp *> digits <* sp)
-  return (op, #[first] ++ rest)
+  let op <- sp *> op <* sp      <* nl
+  let nums <- manyCore (attempt (sp *> digits <* sp <* nl)) #[first]
+  return (op, nums)
 
 def solve2 (input : Grid Char) : Nat :=
   let st := input.transpose.toString

@@ -35,7 +35,7 @@ def grid (p : Parser α) : Parser (Grid α) := do
   let rows <- manyCore (line p nc) #[first.toVector]
   return Grid.mk nc rows
 
-def Input := Grid Cell
+abbrev Input := Grid Cell
 
 def cell : Parser Cell :=
   (skipChar '.' *> return Cell.empty)
