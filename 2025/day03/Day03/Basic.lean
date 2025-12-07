@@ -5,7 +5,7 @@ open Std.Internal.Parsec.String
 
 -- # Input parser
 
-def Input := Array (Array Nat)
+abbrev Input := Array (Array Nat)
 
 def battery : Parser Nat := do
   let d <- digit
@@ -20,20 +20,20 @@ def parser : Parser Input := many bank
 
 -- # Part 1
 
-def bankJoltage (bank : Array Nat) : Nat :=
-  let acc := fun (state : Nat × Nat) (bat : Nat) => (
+def bankJoltage1 (bank : Array Nat) : Nat :=
+  let acc := fun (state : Nat × Nat) (bat : Nat) =>
     let ⟨pairMax, batMax⟩ := state
-    (max pairMax (10 * batMax + bat), max batMax bat))
-  let ⟨pairMax, _⟩ := Array.foldl acc ⟨0, 0⟩ bank
+    (max pairMax (10 * batMax + bat), max batMax bat)
+  let ⟨pairMax, _⟩ := bank.foldl acc ⟨0, 0⟩
   pairMax
 
 def solve1 (input : Input) : Nat :=
-  (input.map bankJoltage).sum
+  input.map bankJoltage1 |>.sum
 
 -- # Part 2
 
-def enumerate {a : Type} (xs : List a) : List (Nat × a) :=
-  (List.range xs.length).zip xs
+def enumerate {α : Type} (arr : Array α) : Array (Nat × α) :=
+  Array.range arr.size |>.zip arr
 
 def handleDigit (len : Nat) (k : Nat) (acc : Array Nat) (item : Nat × Nat) : Array Nat :=
   let ⟨i, digit⟩ := item
@@ -44,11 +44,10 @@ def handleDigit (len : Nat) (k : Nat) (acc : Array Nat) (item : Nat × Nat) : Ar
     else acc
 termination_by acc.size
 
-def bankJoltage' (bank : Array Nat) : Nat :=
-  bank.toList
-    |> enumerate
-    |> List.foldl (handleDigit bank.size 12) #[]
-    |> Array.foldl (fun acc digit => 10 * acc + digit) 0
+def bankJoltage2 (bank : Array Nat) : Nat :=
+  enumerate bank
+    |>.foldl (handleDigit bank.size 12) #[]
+    |>.foldl (fun acc digit => 10 * acc + digit) 0
 
 def solve2 (input : Input) : Nat :=
-  (input.map bankJoltage').sum
+  input.map bankJoltage2 |>.sum

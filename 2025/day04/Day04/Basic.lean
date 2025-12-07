@@ -5,13 +5,12 @@ open Std.Internal.Parsec.String
 
 -- # Input parser
 
+abbrev Input := Array (Array Bool)
+
 def cell : Parser Bool :=
   (do skipChar '@'; return true) <|> (do skipChar '.'; return false)
 
-def parser : Parser $ Array (Array Bool) := many (do
-  let row <- many cell
-  skipChar '\n'
-  return row)
+def parser : Parser Input := many (many cell <* skipChar '\n')
 
 -- # Part 1
 
@@ -32,36 +31,31 @@ def countAdjRolls (input : Array (Array Bool)) (nr : Nat) (nc : Nat) (r : Nat) (
     )
     |> Array.sum
 
-def solve1 (input : Array (Array Bool)) : Nat :=
+def solve1 (input : Input) : Nat :=
   let nr := input.size
   let nc := (input.getD 0 #[]).size
   let rows := Array.range nr
   let cols := Array.range nc
   rows
-    |> Array.map (fun r =>
+    |>.map (fun r =>
       cols
-        |> Array.map (fun c =>
+        |>.map (fun c =>
           if (input.getD r #[]).getD c false == true
           then
             let adjRolls := countAdjRolls input nr nc r c
             if adjRolls < 4 then 1 else 0
           else
-            0
-        )
-        |> Array.sum
-    )
-    |> Array.sum
-
+            0)
+        |>.sum)
+    |>.sum
 
 -- # Part 2
 
 def countRolls (input : Array (Array Bool)) : Nat :=
-  Array.foldl
+  input.foldl
     (fun acc row =>
-      acc
-        + Array.foldl (fun acc cell => acc + if cell then 1 else 0) 0 row)
+      acc + row.foldl (fun acc cell => acc + if cell then 1 else 0) 0)
     0
-    input
 
 def iterate {α : Type} (step : α -> Nat -> (α × Nat)) (state : α) (metric : Nat) : (α × Nat) :=
   let ⟨state', metric'⟩ := step state metric
@@ -87,7 +81,7 @@ def clearSome (input : Array (Array Bool)) (count : Nat) : (Array (Array Bool) �
           else if countAdjRolls input nr nc r c >= 4
               then #[]
               else #[(r, c)]))
-  let input' := Array.foldl clearOne input points
+  let input' := points.foldl clearOne input
   let count' := count - points.size
   (input', count')
 
