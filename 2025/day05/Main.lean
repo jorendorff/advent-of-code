@@ -6,7 +6,7 @@ import Std.Time.DateTime.Timestamp
 open Std.Internal.Parsec
 
 def main (args : List String) : IO Unit := do
-  let [filename] := args | IO.println "usage: day03 inputs/example.txt"
+  let [filename] := args | IO.println "usage: day05 inputs/example.txt"
   let t0 <- Std.Time.Timestamp.now
   let inputStr <- IO.FS.readFile filename
   let result := parser inputStr.mkIterator
