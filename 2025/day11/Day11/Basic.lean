@@ -20,7 +20,6 @@ def parser : Parser Input := many (do
     skipChar '\n'
     return (src, dsts))
 
-
 -- # Producing the tier array
 
 -- Maps each device to its tier.
@@ -49,11 +48,11 @@ partial def toFixedPointBy {α β: Type} [BEq β] (f : α -> α) (metric : α ->
 partial def stratify (input : Input) : TierMap :=
   let devices := allDevices input
   let edges := input.flatMap (fun ⟨src, dsts⟩ => dsts.map (src, ·))
-  let fwd :=
-    devices.map (·, #[])
-      |> HashMap.ofList
-      |> edges.foldl (fun fwd ⟨src, dst⟩ =>
-        fwd.alter src (fun dsts => some $ dsts.getD #[] |>.push dst))
+  let fwd := HashMap.ofList $ devices.map (·, #[])
+  let fwd := fwd
+    |> edges.foldl (fun fwd ⟨src, dst⟩ =>
+      fwd.alter src (fun dsts =>
+        some $ dsts.getD #[] |>.push dst))
 
   toFixedPointBy
     (fun tierMap =>
