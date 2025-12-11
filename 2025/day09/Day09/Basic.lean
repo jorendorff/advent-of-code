@@ -1,10 +1,10 @@
 import Init.Data.Array.QSort.Basic
 import Std.Internal.Parsec
-import Std.Data.TreeMap
+import Std.Data.HashSet
 
 open Std.Internal.Parsec
 open Std.Internal.Parsec.String
-open Std(TreeMap)
+open Std(HashSet)
 
 -- # Input parser
 
@@ -34,31 +34,7 @@ def solve1 (input : Input) : Int :=
 
 -- # Part 2
 
-def uniq {α : Type} [BEq α] [Inhabited α] (arr : Array α) : Array α :=
-  Array.finRange arr.size
-    |>.foldl
-      (fun ⟨arr, prev, w⟩ r =>
-        let v := arr[r]!
-        if prev == some v
-        then (arr, prev, w)
-        else ⟨arr.set! w v, some v, w + 1⟩)
-      (arr, none, 0)
-    |> (·.1)
-
-structure Corner where
-  isTop : Bool
-  winding : Int -- 1 if top left or bottom right corner, -1 top right or bottom left
-
--- A row of corners that all share the same y coordinate.
--- Maps x coordinates to facts about that corner.
-def Row := TreeMap Int Corner
-
-abbrev AllCorners := TreeMap Int Row
-
-def Row.insert (row : Row) (x : Int) (isTop : Bool) (wind : Int) : Row :=
-  row.alter x fun
-    | none => some (Corner.mk isTop wind)
-    | _ => panic! "oh no repeated tile"
+-- ## General algorithms
 
 -- Wrapping +1 function for array indices.
 def Fin.wrappingSucc {n : Nat} (i : Fin n) : Fin n :=
@@ -68,131 +44,222 @@ def Fin.wrappingSucc {n : Nat} (i : Fin n) : Fin n :=
   have nz : NeZero n := by constructor; apply Nat.ne_of_gt; exact Fin.pos i
   i + 1
 
-def tabulateCorners (input : Input) : AllCorners :=
-  Array.finRange input.size
-    |>.foldl (fun (rows : TreeMap Int Row) (i : Fin input.size) =>
+-- Set one cell of an array of arrays.
+def poke {α : Type} {nr nc : Nat}
+  (arr : Array (Array α)) (r : Fin nr) (c : Fin nc) (value : α)
+: Array (Array α) :=
+  let ⟨row, arr⟩ := arr.swapAt! r #[]
+  arr.set! r $ row.set! c value
+
+-- Like the C++ std::partial_sum algorithm, replaces each element of `arr`
+-- with the sum of all values up to and including that element.
+def partialSums {α : Type} [Zero α] [Add α] (arr : Array α) : Array α :=
+  let indices := Array.finRange arr.size
+  (0, arr.toVector)
+    |> indices.foldl (fun ⟨sum, arr⟩ i =>
+      let sum := sum + arr[i]
+      (sum, arr.set i sum))
+    |>.snd
+    |>.toArray
+
+-- In an array of arrays, do partial sums vertically. That is, replace each
+-- element `arr[r][c]` with the sum of that value and all elements above it,
+-- `arr[0..r][c]`.
+def columnPartialSums {α : Type} [Zero α] [Add α] (arr : Array (Array α))
+: Array (Array α) :=
+  if h : 0 < arr.size
+  then
+    arr.foldl
+      (fun ⟨latest, acc⟩ row =>
+        let row := row.zipWith (· + ·) latest
+        (row, acc.push row))
+      (Array.replicate arr[0].size 0, #[])
+    |>.snd
+  else
+    arr
+
+-- Binary search.
+--
+-- Return the minimum value `i` in `start..stop` for which `test i` is `True`;
+-- or `stop` if `test i` is not true for any of those numbers (or `stop < start`).
+--
+-- `test` must be monotone: that is, `test i < test j -> i < j`.
+def bisectRange {limit : Nat} (test : Fin limit -> Bool)
+(start : Nat) (stop : Nat) (hStop : stop <= limit): Fin (limit + 1) :=
+  if h : start < stop
+  then
+    let mid := (stop + start) / 2
+    have : mid < stop := by
+      rw [Nat.div_lt_iff_lt_mul, Nat.mul_two, Nat.add_lt_add_iff_left]
+      exact h
+      exact Nat.zero_lt_two
+    have : NeZero limit := by
+      constructor; apply Nat.ne_zero_of_lt; exact Nat.lt_of_lt_of_le h hStop
+    if test $ Fin.ofNat limit mid
+    then bisectRange test start mid (by omega)
+    else bisectRange test (mid + 1) stop (by omega)
+  else Fin.ofNat (limit + 1) start
+
+-- Return the minimum value `i` in `0..n` for which `test i` is `True`;
+-- or `n` if `test i` is not true for any of those numbers (or n = 0).
+--
+-- `test` must be monotone: that is, `test i < test j -> i < j`.
+def bisect (n : Nat) (test : Fin n -> Bool) : Fin (n + 1) :=
+  bisectRange test 0 n (Nat.le_refl n)
+
+example : bisect 4 (5 <= #[1, 4, 5, 6][·]) = 2 := by simp [bisect, bisectRange]
+
+-- def bisect_range_correct (limit : Nat) (test : Fin limit -> Bool)
+-- (start : Nat) (stop : Nat) (hstop : stop <= limit) (i : Fin (limit + 1))
+-- (hStart : start <= i.toNat) (hStop : i.toNat <= stop)
+-- (hMonotone : ∀ j : Fin limit, test j == (i.toNat <= j.toNat))
+-- : bisectRange test start stop hstop = i
+-- := by sorry
+--
+-- def bisect_correct (n : Nat) (test : Fin n -> Bool) (i : Fin (n + 1))
+-- : (∀ j : Fin n, test j == (i.toNat <= j.toNat)) -> bisect n test == i
+-- := by sorry
+
+
+-- ## Particulars
+
+structure BitMap where
+  points : HashSet (Int × Int)
+  xc : Array Int
+  yc : Array Int
+  map : Array (Array Bool)
+
+def BitMap.fromPoints (input : Input) : BitMap :=
+  -- Our basic approach is to compress the grid to only coordinates that
+  -- actually have points. So the first step is to make:
+  -- Sorted lists of all x coordinates and all y coordinates
+  let xc := input.map Prod.fst |> Array.qsortOrd |> Array.eraseReps
+  let yc := input.map Prod.snd |> Array.qsortOrd |> Array.eraseReps
+  -- Functions mapping coordinates back to indices in those arrays.
+  let find_xc := fun x => bisect xc.size (x <= xc[·])
+  let find_yr := fun y => bisect yc.size (y <= yc[·])
+  -- Now plot the red tiles in a grid.
+  -- Again, notionally the grid contains only rows and columns which have red tiles.
+  -- We leave a margin of 1 to the right and bottom to appease the type system.
+  let redTiles := Array.replicate (yc.size + 1) (Array.replicate (xc.size + 1) false)
+  let range := Array.finRange input.size
+  let redTiles := redTiles
+    |> range.foldl (fun redTiles i =>
+      let a := input[i]
+      let c := find_xc a.1
+      let r := find_yr a.2
+      poke redTiles r c true)
+  let rows := Array.replicate (yc.size + 1) (Array.replicate (xc.size + 1) 0)
+  let rows := rows
+    |> range.foldl (fun (rows : Array (Array Int)) (i : Fin input.size) =>
       let a := input[i]
       let b := input[i.wrappingSucc]
       if a.1 == b.1
       then -- vertical stroke
-        let x := a.1
-        if a.2 < b.2
-        then -- downward stroke
-          rows
-            |>.alter a.2 (fun (row : Option Row) =>
-              row.getD TreeMap.empty
-                |>.insert x True 1
-                |> some)
-            |>.alter b.2 (fun row =>
-              row.getD TreeMap.empty
-                |>.insert x False (-1)
-                |> some)
-        else -- upward stroke
-          rows
-            |>.alter b.2 (fun row =>
-              row.getD TreeMap.empty
-                |>.insert x True (-1)
-                |> some)
-            |>.alter a.2 (fun row =>
-              row.getD TreeMap.empty
-                |>.insert x False 1
-                |> some)
+        let c := find_xc a.1
+        let ra := find_yr a.2
+        let rb := find_yr b.2
+        rows
+          |> (poke · ra c 1)
+          |> (poke · rb c (-1))
       else
         if a.2 == b.2
         then rows -- horizontal stroke, do nothing
         else panic! "diagonal line detected")
-      default
+  let rows := columnPartialSums rows
+    |>.map (fun row => partialSums row |>.map (· != 0))
+  {points := HashSet.ofArray input, xc := xc, yc := yc, map := rows}
 
-structure SkyPoint where
-  y : Int
-  x : Int
-  winding : Int
+def rectArea (x₀ : Int) (y₀ : Int) (x₁ : Int) (y₁ : Int) : Int :=
+  -- dbg_trace "      found rectangle ({x₀}, {y₀}) - ({x₁}, {y₁})"
+  (x₁ - x₀ + 1) * (y₁ - y₀ + 1)
 
-structure State where
-  -- Info about the green-and-red-tiled area above the current row
-  -- (i.e. having lower y coordinates).
-  --
-  -- a new row of corners affects this as follows:
-  -- . top corners add new points
-  -- . bottom corners remove points
-  -- . both kinds can affect the winding of subsequent points
-  skyline : Array SkyPoint
-  -- maximum area of any rectangle that can be drawn in the figure so far
-  best : Int
-deriving Nonempty
+def maybePopStack
+  (points : HashSet (Int × Int))
+  (stack : Array (Int × Int))
+  (x₁ : Int) (y₁ : Int) (y : Option Int)
+: Array (Int × Int) :=
+  if h : stack.size = 0
+  then stack
+  else
+    let ⟨x₀, y₀⟩ := stack.back
+    if y₀ < y.getD (y₀ + 1)
+    then
+      -- dbg_trace "    popping stack"
+      maybePopStack points stack.pop x₁ y₁ y
+    else stack
+termination_by stack.size
 
-structure InnerState where
-  -- y coordinate of the current row
-  y : Int
-  -- current winding of a scan line immediately below the current row
-  winding : Int
-  -- remaining corners (red tiles) in the current row
-  -- items are dropped from the front of this as we scan left to right
-  row : List (Int × Corner)
-  -- remaining points in the skyline of prevState
-  -- items are dropped from the front of this as we scan left to right
-  skyline : List SkyPoint
-  -- upper left corners of potential rectangles
-  stack : Array (Int × Int)
-  -- output to pass on to the next row
-  nextSkyline : Array SkyPoint
-  -- maximum rectangle area discovered so far
-  best : Int
+def maybePushStack
+  (points : HashSet (Int × Int))
+  (stack : Array (Int × Int)) (x : Int) (sky : Option Int)
+: Array (Int × Int) :=
+  match sky with
+  | none => stack
+  | some y =>
+    let shouldPush :=
+      (x, y) ∈ points
+      && if h : stack.size = 0
+        then true
+        else stack.back.snd > y
+    if shouldPush
+    then
+      -- dbg_trace "    pushing point {(x, y)} "
+      stack.push (x, y)
+    else stack
 
+def showRow (row : Array Bool) : String :=
+  row.foldl (fun s b => s.push (if b then '#' else '.')) ""
 
-def InnerState.handleCorner (s : InnerState)
-  (x : Int) (corner : Corner) : InnerState
-:=
-  let w' := s.winding + corner.winding
-  -- if this is a new top corner of an ???
-  {s with winding := w'}
+def maybeImproveBest
+  (points : HashSet (Int × Int))
+  (stack : Array (Int × Int))
+  (x : Int)
+  (y : Int)
+  (best : Int)
+: Int :=
+  if (x, y) ∈ points
+  then
+    stack
+      |>.filter (· ∈ points)
+      |>.map (fun ⟨x₀, y₀⟩ => rectArea x₀ y₀ x y)
+      |>.foldl max best
+  else best
 
--- If the new point has a winding of 0, that means a vertical stroke cuts across
--- the current row here, so pop all points.
---
--- Whenever we pop a point, we check for the largest rectangle that could be
--- made with it as the top left corner.
---
--- If the stack is empty, or this point is higher than the previous skyPoint,
--- we just push it.
---
--- if this point is lower than the previous skyPoint, we need to pop
--- one or more points, checking for rectangles as we go; and push a stack point
--- with the x coordinate of the last point popped and the y of `point`.
-def InnerState.handleSkyPoint (s : InnerState)
-  (point : SkyPoint) : InnerState
-:=
-  sorry
+def handleRow
+  (points : HashSet (Int × Int))
+  (xc : Array Int)
+  (skyline : Array (Option Int))
+  (y : Int)
+  (row : Array Bool)
+: (Array (Option Int) × Int) :=
+  -- dbg_trace "  handleRow y={y}, row={showRow row}"
+  let ⟨_stack, skyline', rowBest⟩ := xc.zip (skyline.zip row)
+    |>.foldl
+      (fun ⟨stack, skyline', rowBest⟩ ⟨x, sky, cell⟩ =>
+        let rowBest := maybeImproveBest points stack x y rowBest
+        let stack := maybePopStack points stack x y sky
+        let stack := maybePushStack points stack x sky
+        let sky' := if cell then sky.or (some y) else none
+        (stack, skyline'.push sky', rowBest))
+      (#[], #[], 0)
+  -- dbg_trace "    done, skyline={repr skyline'}, rowBest={rowBest}"
+  (skyline', rowBest)
 
--- We are scanning left to right, reacting to vertical-stroke endpoints
--- on this line and keeping an eye on the skyline. So this function mainly
--- merges the two event sources for this left-to-right pass.
-partial def InnerState.runLoop (s : InnerState) : State
-:= match (s.skyline, s.row) with
-  | ⟨[], []⟩ => {skyline := s.nextSkyline, best := s.best}
-  | ⟨[], List.cons ⟨x, corner⟩ row'⟩ =>
-    {s.handleCorner x corner with row := row'}.runLoop
-  | ⟨List.cons point skyline', []⟩ =>
-    {s.handleSkyPoint point with skyline := skyline'}.runLoop
-  | ⟨List.cons point skyline', List.cons ⟨x, corner⟩ row'⟩ =>
-    if point.x < x
-    then {s.handleSkyPoint point with skyline := skyline'}.runLoop
-    else {s.handleCorner x corner with row := row'}.runLoop
+def BitMap.maxRectArea (b : BitMap) : Int :=
+  let ⟨_skyline, best⟩ := b.yc.zip b.map |>.foldl
+    (fun ⟨skyline, best⟩ ⟨y, row⟩ =>
+      let ⟨skyline, rowBest⟩ := handleRow b.points b.xc skyline y row
+      (skyline, max rowBest best))
+    (Array.replicate b.xc.size none, 0)
+  -- dbg_trace "answer: {best}"
+  best
+
+def flipPoints (arr : Input) : Input :=
+  let ymax := arr.map Prod.snd |>.foldl max 0
+  arr.map (fun ⟨x, y⟩ => (x, ymax + 1 - y))
 
 def solve2 (input : Input) : Int :=
-  let rows := tabulateCorners input
-  -- outer loop - iterate over rows, y increasing
-  {skyline := #[], best := 0 : State}
-    |> rows.foldl (fun (state : State) (y : Int) (row : Row) =>
-      -- inner loop - iterate over corners, x increasing
-      let innerState : InnerState := {
-        y := y,
-        winding := 0,
-        row := row.toList,
-        skyline := state.skyline.toList,
-        stack := #[],
-        nextSkyline := #[],
-        best := state.best,
-      }
-      innerState.runLoop)
-    |>.best
+  let rows := BitMap.fromPoints input
+  let rows' := BitMap.fromPoints (flipPoints input)
+  max rows.maxRectArea rows'.maxRectArea
