@@ -1,3 +1,34 @@
+-- This solution breaks down into two parts.
+--
+-- 1. Draw a bitmap of the red-and-green-tiled region.
+--    In the given coordinates, this bitmap would be too big (10^10 pixels),
+--    so we make a arrays of the x- and y-coordinates that are actually used
+--    in the puzzle input, and use that to convert the coordinates to be much
+--    smaller. There are only about 100 coordinates used on each axis, so
+--    the resulting bitmap is about 10k pixels.
+--
+--    I did this using the "winding" technique.
+--
+-- 2. Do a linear scan, top to bottom and left to right, over the entire bitmap
+--    to find rectangles that are entirely inside the border.
+--
+--    This is the tough part. As I scan horizontally across the image,
+--    I keep a stack of the location of all red tiles that are above and to the left
+--    for which there's a fully red-and-green rectangle from there to the current tile.
+--    I also track the shape of the "sky", how far red-and-green tiles go directly
+--    up from each point, as well as which of those tiles are red.
+--
+--    The scan only finds rectangles where the top-left and bottom-right corners
+--    are red tiles. To find the other kind of rectangle, once we're done we flip
+--    the points vertically (to negative y coordinates) and do it all over again!
+--
+-- The first half is O(n^2) in the size of the input. The second half is O(n^3).
+-- (But I think it turns out to be more like n^2 in practice for the actual
+-- puzzle input.)
+--
+-- The approach would work without the bitmap, and I tried that first, but it was
+-- too fiddly. I think the worst-case performance is still O(n^3).
+
 import Init.Data.Array.QSort.Basic
 import Std.Internal.Parsec
 import Std.Data.HashSet
@@ -48,6 +79,9 @@ def Fin.wrappingSucc {n : Nat} (i : Fin n) : Fin n :=
 def poke {α : Type} {nr nc : Nat}
   (arr : Array (Array α)) (r : Fin nr) (c : Fin nc) (value : α)
 : Array (Array α) :=
+  -- This function tries to do a destructive update instead of copying the array.
+  -- So it swaps the row out, because I superstitiously believe the row's refcount
+  -- would be 2 otherwise, forcing a copy.
   let ⟨row, arr⟩ := arr.swapAt! r #[]
   arr.set! r $ row.set! c value
 
@@ -122,6 +156,13 @@ example : bisect 4 (5 <= #[1, 4, 5, 6][·]) = 2 := by simp [bisect, bisectRange]
 
 
 -- ## Particulars
+
+-- To clean this up:
+-- * Translate all points to array coordinates and delete the HashSet
+-- * Don't put non-red points in the skyline; they're only used to distinguish
+--   between columns where nothing's happening and columns where we're popping
+--   everything -- but there's got to be a slimmer way to represent that,
+--   it's a lot of busywork data
 
 structure BitMap where
 --todo: translate points into inner coords
