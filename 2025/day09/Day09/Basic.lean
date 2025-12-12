@@ -124,6 +124,7 @@ example : bisect 4 (5 <= #[1, 4, 5, 6][·]) = 2 := by simp [bisect, bisectRange]
 -- ## Particulars
 
 structure BitMap where
+--todo: translate points into inner coords
   points : HashSet (Int × Int)
   xc : Array Int
   yc : Array Int
@@ -171,8 +172,12 @@ def BitMap.fromPoints (input : Input) : BitMap :=
   {points := HashSet.ofArray input, xc := xc, yc := yc, map := rows}
 
 def rectArea (x₀ : Int) (y₀ : Int) (x₁ : Int) (y₁ : Int) : Int :=
-  -- dbg_trace "      found rectangle ({x₀}, {y₀}) - ({x₁}, {y₁})"
-  (x₁ - x₀ + 1) * (y₁ - y₀ + 1)
+  if x₀ > x₁ || y₀ > y₁
+  then panic! "fatal: gravity inversion"
+  else
+    let area := (x₁ - x₀ + 1) * (y₁ - y₀ + 1)
+    -- dbg_trace "      found rectangle ({x₀}, {y₀}) - ({x₁}, {y₁}), area {area}"
+    area
 
 def maybePopStack
   (points : HashSet (Int × Int))
@@ -185,7 +190,7 @@ def maybePopStack
     let ⟨x₀, y₀⟩ := stack.back
     if y₀ < y.getD (y₀ + 1)
     then
-      -- dbg_trace "    popping stack"
+      --dbg_trace "    popping stack"
       maybePopStack points stack.pop x₁ y₁ y
     else stack
 termination_by stack.size
@@ -194,6 +199,9 @@ def maybePushStack
   (points : HashSet (Int × Int))
   (stack : Array (Int × Int)) (x : Int) (sky : Option Int)
 : Array (Int × Int) :=
+-- a tricky thing here is we may need to push several points.
+-- this is necessary if there are multiple red tiles in this column;
+-- if one is popped we still want the next one underneath.
   match sky with
   | none => stack
   | some y =>
@@ -220,10 +228,21 @@ def maybeImproveBest
 : Int :=
   if (x, y) ∈ points
   then
-    stack
-      |>.filter (· ∈ points)
-      |>.map (fun ⟨x₀, y₀⟩ => rectArea x₀ y₀ x y)
-      |>.foldl max best
+    --dbg_trace "    considering {(x, y)}"
+    if stack.isEmpty
+    then
+      --dbg_trace "      but stack is empty"
+      best
+    else
+      let stk := stack
+        |>.filter (· ∈ points)
+      if stk.isEmpty
+      then
+        --dbg_trace "      but stack contains no red points"
+        best
+      else stk
+        |>.map (fun ⟨x₀, y₀⟩ => rectArea x₀ y₀ x y)
+        |>.foldl max best
   else best
 
 def handleRow
@@ -233,7 +252,7 @@ def handleRow
   (y : Int)
   (row : Array Bool)
 : (Array (Option Int) × Int) :=
-  -- dbg_trace "  handleRow y={y}, row={showRow row}"
+  dbg_trace "  handleRow y={y}, row={showRow row}"
   let ⟨_stack, skyline', rowBest⟩ := xc.zip (skyline.zip row)
     |>.foldl
       (fun ⟨stack, skyline', rowBest⟩ ⟨x, sky, cell⟩ =>
@@ -243,7 +262,7 @@ def handleRow
         let sky' := if cell then sky.or (some y) else none
         (stack, skyline'.push sky', rowBest))
       (#[], #[], 0)
-  -- dbg_trace "    done, skyline={repr skyline'}, rowBest={rowBest}"
+  --dbg_trace "    done, rowBest={rowBest}"
   (skyline', rowBest)
 
 def BitMap.maxRectArea (b : BitMap) : Int :=
@@ -252,12 +271,12 @@ def BitMap.maxRectArea (b : BitMap) : Int :=
       let ⟨skyline, rowBest⟩ := handleRow b.points b.xc skyline y row
       (skyline, max rowBest best))
     (Array.replicate b.xc.size none, 0)
-  -- dbg_trace "answer: {best}"
+  dbg_trace "answer: {best}"
   best
 
 def flipPoints (arr : Input) : Input :=
-  let ymax := arr.map Prod.snd |>.foldl max 0
-  arr.map (fun ⟨x, y⟩ => (x, ymax + 1 - y))
+  --let ymax := arr.map Prod.snd |>.foldl max 0
+  arr.map (fun ⟨x, y⟩ => (x, -y))
 
 def solve2 (input : Input) : Int :=
   let rows := BitMap.fromPoints input
