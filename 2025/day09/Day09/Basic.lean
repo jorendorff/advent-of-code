@@ -182,39 +182,38 @@ def rectArea (x₀ : Int) (y₀ : Int) (x₁ : Int) (y₁ : Int) : Int :=
 def maybePopStack
   (points : HashSet (Int × Int))
   (stack : Array (Int × Int))
-  (x₁ : Int) (y₁ : Int) (y : Option Int)
+  (x₁ : Int) (y₁ : Int) (sky : Array Int)
 : Array (Int × Int) :=
   if h : stack.size = 0
   then stack
   else
     let ⟨x₀, y₀⟩ := stack.back
-    if y₀ < y.getD (y₀ + 1)
+    if y₀ < sky.getD 0 (y₀ + 1)
     then
-      --dbg_trace "    popping stack"
-      maybePopStack points stack.pop x₁ y₁ y
+      -- dbg_trace "    popping stack"
+      maybePopStack points stack.pop x₁ y₁ sky
     else stack
 termination_by stack.size
 
 def maybePushStack
   (points : HashSet (Int × Int))
-  (stack : Array (Int × Int)) (x : Int) (sky : Option Int)
+  (stack : Array (Int × Int)) (x : Int) (sky : Array Int)
 : Array (Int × Int) :=
--- a tricky thing here is we may need to push several points.
--- this is necessary if there are multiple red tiles in this column;
--- if one is popped we still want the next one underneath.
-  match sky with
-  | none => stack
-  | some y =>
-    let shouldPush :=
-      (x, y) ∈ points
-      && if h : stack.size = 0
-        then true
-        else stack.back.snd > y
-    if shouldPush
-    then
-      -- dbg_trace "    pushing point {(x, y)} "
-      stack.push (x, y)
-    else stack
+  -- If there are multiple red tiles in the skyline at this `x`, we push several
+  -- points because if the topmost one is popped, we may still be able to make
+  -- rectangles using the ones underneath.
+  -- `sky` is in increasing y order, need to push in decreasing order hence `foldr`
+  stack |> sky.foldr (fun y stack =>
+  let shouldPush :=
+    (x, y) ∈ points
+    && if h : stack.size = 0
+      then true
+      else y < stack.back.snd
+  if shouldPush
+  then
+    -- dbg_trace "    pushing point {(x, y)} "
+    stack.push (x, y)
+  else stack)
 
 def showRow (row : Array Bool) : String :=
   row.foldl (fun s b => s.push (if b then '#' else '.')) ""
@@ -228,17 +227,17 @@ def maybeImproveBest
 : Int :=
   if (x, y) ∈ points
   then
-    --dbg_trace "    considering {(x, y)}"
+    -- dbg_trace "    considering {(x, y)}"
     if stack.isEmpty
     then
-      --dbg_trace "      but stack is empty"
+      -- dbg_trace "      but stack is empty"
       best
     else
       let stk := stack
         |>.filter (· ∈ points)
       if stk.isEmpty
       then
-        --dbg_trace "      but stack contains no red points"
+        -- dbg_trace "      but stack contains no red points"
         best
       else stk
         |>.map (fun ⟨x₀, y₀⟩ => rectArea x₀ y₀ x y)
@@ -248,21 +247,23 @@ def maybeImproveBest
 def handleRow
   (points : HashSet (Int × Int))
   (xc : Array Int)
-  (skyline : Array (Option Int))
+  (skyline : Array (Array Int))
   (y : Int)
   (row : Array Bool)
-: (Array (Option Int) × Int) :=
-  dbg_trace "  handleRow y={y}, row={showRow row}"
+: (Array (Array Int) × Int) :=
+  -- dbg_trace "  handleRow y={y}, row={showRow row}"
   let ⟨_stack, skyline', rowBest⟩ := xc.zip (skyline.zip row)
     |>.foldl
       (fun ⟨stack, skyline', rowBest⟩ ⟨x, sky, cell⟩ =>
         let rowBest := maybeImproveBest points stack x y rowBest
         let stack := maybePopStack points stack x y sky
         let stack := maybePushStack points stack x sky
-        let sky' := if cell then sky.or (some y) else none
+        let sky' := if cell
+          then sky ++ (if (x, y) ∈ points || sky.isEmpty then #[y] else #[])
+          else #[]
         (stack, skyline'.push sky', rowBest))
       (#[], #[], 0)
-  --dbg_trace "    done, rowBest={rowBest}"
+  -- dbg_trace "    done, skyline={skyline'}, rowBest={rowBest}\n"
   (skyline', rowBest)
 
 def BitMap.maxRectArea (b : BitMap) : Int :=
@@ -270,8 +271,8 @@ def BitMap.maxRectArea (b : BitMap) : Int :=
     (fun ⟨skyline, best⟩ ⟨y, row⟩ =>
       let ⟨skyline, rowBest⟩ := handleRow b.points b.xc skyline y row
       (skyline, max rowBest best))
-    (Array.replicate b.xc.size none, 0)
-  dbg_trace "answer: {best}"
+    (Array.replicate b.xc.size #[], 0)
+  -- dbg_trace "answer: {best}\n"
   best
 
 def flipPoints (arr : Input) : Input :=
