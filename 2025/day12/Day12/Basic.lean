@@ -41,11 +41,6 @@ def parser : Parser Input := do
 
 -- # Part 1
 
-def asserting {α : Type} [Inhabited α]
-  (p : Prop) [Decidable p] (f : p -> α) : α
-:=
-  if h : p then f h else panic! "assertion failed"
-
 def Input.canFitAll (input : Input) (region : Region) : Bool :=
   let shape_volume := input.shapes
     |>.map (·.flatMap id |>.filter id |>.size)
@@ -60,7 +55,3 @@ def Input.canFitAll (input : Input) (region : Region) : Bool :=
 
 def solve1 (input : Input) : Nat :=
   input.regions.filter input.canFitAll |>.size
-
--- # Part 2
-
-def solve2 (input : Input) : Nat := 0

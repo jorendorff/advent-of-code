@@ -21,8 +21,3 @@ def main (args : List String) : IO Unit := do
     IO.print s!"part 1: {repr answer1}"
     let dt <- t0.since
     IO.println s!" ({dt})"
-    let t0 <- Std.Time.Timestamp.now
-    let answer2 := solve2 input
-    IO.print s!"part 2: {repr answer2}"
-    let dt <- t0.since
-    IO.println s!" ({dt})"
